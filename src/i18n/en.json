@@ -1,0 +1,130 @@
+{
+  "common": {
+    "appName": "Saaf Gali",
+    "tagline": "Street cleaning, managed",
+    "login": "Log in",
+    "logout": "Log out",
+    "language": "Language",
+    "soon": "Soon",
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "backHome": "Back to home",
+    "tryAgain": "Try again",
+    "comingSoonTitle": "Coming soon",
+    "comingSoonBody": "This section will be ready in an upcoming update.",
+    "errorTitle": "Something went wrong",
+    "errorBody": "Please try again. If the problem continues, contact your supervisor.",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "The page you are looking for does not exist or has moved."
+  },
+  "portal": {
+    "admin": "Admin panel",
+    "supervisor": "Supervisor",
+    "worker": "Worker",
+    "resident": "Resident"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "areas": "Areas & streets",
+    "households": "Households",
+    "workers": "Workers",
+    "duties": "Duties",
+    "workProof": "Work proof",
+    "complaints": "Complaints",
+    "fees": "Fees",
+    "expenses": "Expenses",
+    "reports": "Reports",
+    "users": "Users",
+    "settings": "Settings",
+    "home": "Home",
+    "myDuties": "My duties",
+    "startWork": "Start work",
+    "profile": "Profile",
+    "myBills": "My bills",
+    "hisaab": "Hisaab",
+    "team": "Team",
+    "review": "Review"
+  },
+  "landing": {
+    "badge": "Rawalpindi & Islamabad",
+    "title": "Clean streets, clear accounts",
+    "subtitle": "Saaf Gali helps street cleaning teams plan daily duties, prove every job with photos, collect monthly fees and show residents exactly where their money goes.",
+    "ctaLogin": "Log in",
+    "ctaLearnMore": "How it works",
+    "featuresTitle": "Everything a gali safai team needs",
+    "features": {
+      "duties": {
+        "title": "Daily duty roster",
+        "body": "Assign workers to streets by shift and see who is on duty today."
+      },
+      "proof": {
+        "title": "Photo proof of work",
+        "body": "Before and after photos with location and time, checked by the supervisor."
+      },
+      "fees": {
+        "title": "Monthly fee tracking",
+        "body": "Know who has paid, who is pending and the total collected this month."
+      },
+      "hisaab": {
+        "title": "Public hisaab",
+        "body": "Every rupee in and out, open for the residents of each area to see."
+      },
+      "complaints": {
+        "title": "Complaints with photos",
+        "body": "Residents report garbage or blocked drains and follow the fix."
+      },
+      "alerts": {
+        "title": "Alerts and reminders",
+        "body": "In-app, email, push and WhatsApp messages for the right people."
+      }
+    },
+    "howTitle": "How it works",
+    "steps": {
+      "one": "Areas are split into blocks and streets, and every house is listed.",
+      "two": "Workers clean their streets and upload photos from their phone.",
+      "three": "Supervisors approve the work, and residents see fees and spending."
+    },
+    "ctaTitle": "Already part of the team?",
+    "ctaBody": "Log in with your mobile number and password.",
+    "footer": "© {year} Saaf Gali. Made for cleaner streets."
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "loginSoon": "Login with mobile number and password is coming in the next update."
+  },
+  "admin": {
+    "title": "Dashboard",
+    "intro": "Areas, fee collection, expenses and team performance will show here.",
+    "emptyTitle": "Nothing here yet",
+    "emptyBody": "Once areas and households are added, your dashboard will fill up."
+  },
+  "supervisor": {
+    "title": "Today's work",
+    "intro": "Check your team's attendance, review photos and handle complaints.",
+    "actions": {
+      "team": "My team",
+      "review": "Review work",
+      "complaints": "Complaints"
+    }
+  },
+  "worker": {
+    "title": "Assalam-o-Alaikum!",
+    "intro": "Your duties for today will appear here.",
+    "actions": {
+      "startWork": "Start work",
+      "myDuties": "My duties",
+      "salary": "My salary",
+      "help": "Help"
+    }
+  },
+  "resident": {
+    "title": "Welcome",
+    "intro": "See your fee bills and payments, and file complaints about your street.",
+    "actions": {
+      "myBills": "My bills",
+      "newComplaint": "File a complaint",
+      "hisaab": "Area hisaab",
+      "profile": "Profile"
+    }
+  }
+}
