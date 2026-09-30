@@ -19,7 +19,7 @@ export const ADMIN_ROOT = "/admin";
 
 export const adminNavItems: NavItem[] = [
   { key: "dashboard", icon: LayoutDashboard, href: ADMIN_ROOT },
-  { key: "areas", icon: MapPinned },
+  { key: "areas", icon: MapPinned, href: `${ADMIN_ROOT}/areas` },
   { key: "households", icon: House },
   { key: "workers", icon: Users },
   { key: "duties", icon: ClipboardList },
