@@ -28,6 +28,6 @@ export const adminNavItems: NavItem[] = [
   { key: "fees", icon: Banknote },
   { key: "expenses", icon: ReceiptText },
   { key: "reports", icon: ChartColumn },
-  { key: "users", icon: UserCog },
-  { key: "settings", icon: Settings },
+  { key: "users", icon: UserCog, href: `${ADMIN_ROOT}/users` },
+  { key: "settings", icon: Settings, roles: ["super_admin"] },
 ];

@@ -11,7 +11,7 @@ const items: NavItem[] = [
   { key: "home", icon: House, href: WORKER_ROOT },
   { key: "startWork", icon: Camera },
   { key: "myDuties", icon: ClipboardList },
-  { key: "profile", icon: UserRound },
+  { key: "profile", icon: UserRound, href: `${WORKER_ROOT}/profile` },
 ];
 
 export function WorkerShell({ children }: { children: React.ReactNode }) {

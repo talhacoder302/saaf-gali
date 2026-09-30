@@ -1,36 +1,19 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
-import { LOCALE_LABELS, LOCALES, type Locale } from "@/i18n/config";
-import { setLocale } from "@/i18n/actions";
+import { useChangeLocale } from "@/components/shared/use-change-locale";
+import { LOCALE_LABELS, LOCALES } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
 type LanguageSwitcherProps = {
   className?: string;
 };
 
-/** Two-button toggle: English / اردو. The choice is saved in a cookie. */
+/** Two-button toggle: English / اردو. */
 export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
-  const current = useLocale();
   const t = useTranslations("common");
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-
-  function choose(locale: Locale) {
-    if (locale === current) return;
-    startTransition(async () => {
-      try {
-        await setLocale(locale);
-        router.refresh();
-      } catch {
-        toast.error(t("errorTitle"));
-      }
-    });
-  }
+  const { current, change, isPending } = useChangeLocale();
 
   return (
     <div
@@ -51,7 +34,7 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
             lang={locale}
             aria-pressed={active}
             disabled={isPending}
-            onClick={() => choose(locale)}
+            onClick={() => change(locale)}
             className={cn(
               "rounded-full px-3 py-1 leading-normal transition-colors",
               active

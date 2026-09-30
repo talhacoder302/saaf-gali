@@ -7,23 +7,25 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { ADMIN_ROOT, adminNavItems } from "@/components/admin/nav-items";
+import { UserMenu } from "@/components/admin/user-menu";
 import { Brand } from "@/components/shared/brand";
 import { LanguageSwitcher } from "@/components/shared/language-switcher";
-import { isActivePath } from "@/components/shared/nav-types";
+import { isActivePath, type ShellUser } from "@/components/shared/nav-types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { localeDirection } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
-function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarNav({ user, onNavigate }: { user: ShellUser; onNavigate?: () => void }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
   const tCommon = useTranslations("common");
+  const items = adminNavItems.filter((item) => !item.roles || item.roles.includes(user.role));
 
   return (
     <nav className="flex flex-col gap-1 p-3">
-      {adminNavItems.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon;
         const active = item.href ? isActivePath(pathname, item.href, ADMIN_ROOT) : false;
         const classes = cn(
@@ -62,8 +64,13 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+type AdminShellProps = {
+  user: ShellUser;
+  children: React.ReactNode;
+};
+
 /** Responsive admin layout: fixed sidebar on desktop, slide-out sheet on mobile. */
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({ user, children }: AdminShellProps) {
   const [open, setOpen] = useState(false);
   const locale = useLocale();
   const tCommon = useTranslations("common");
@@ -77,7 +84,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <Brand href={ADMIN_ROOT} />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav />
+          <SidebarNav user={user} />
         </div>
         <div className="border-t p-4">
           <LanguageSwitcher />
@@ -100,7 +107,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="flex-1 overflow-y-auto">
-                  <SidebarNav onNavigate={() => setOpen(false)} />
+                  <SidebarNav user={user} onNavigate={() => setOpen(false)} />
                 </div>
                 <div className="border-t p-4">
                   <LanguageSwitcher />
@@ -110,9 +117,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <span className="font-medium lg:hidden">{tCommon("appName")}</span>
             <span className="hidden text-sm text-muted-foreground lg:inline">{tPortal("admin")}</span>
           </div>
-          <div className="lg:hidden">
-            <LanguageSwitcher />
-          </div>
+          <UserMenu user={user} profileHref={`${ADMIN_ROOT}/profile`} />
         </header>
 
         <main className="mx-auto w-full max-w-7xl p-4 lg:p-8">{children}</main>

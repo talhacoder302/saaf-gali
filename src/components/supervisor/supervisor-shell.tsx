@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, House, MessageSquareWarning, Users } from "lucide-react";
+import { Camera, House, Users, UserRound } from "lucide-react";
 
 import { BottomNavShell } from "@/components/shared/bottom-nav-shell";
 import type { NavItem } from "@/components/shared/nav-types";
@@ -11,7 +11,7 @@ const items: NavItem[] = [
   { key: "home", icon: House, href: SUPERVISOR_ROOT },
   { key: "team", icon: Users },
   { key: "review", icon: Camera },
-  { key: "complaints", icon: MessageSquareWarning },
+  { key: "profile", icon: UserRound, href: `${SUPERVISOR_ROOT}/profile` },
 ];
 
 export function SupervisorShell({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { House, MessageSquareWarning, ReceiptText, Scale } from "lucide-react";
+import { House, MessageSquareWarning, ReceiptText, UserRound } from "lucide-react";
 
 import { BottomNavShell } from "@/components/shared/bottom-nav-shell";
 import type { NavItem } from "@/components/shared/nav-types";
@@ -11,7 +11,7 @@ const items: NavItem[] = [
   { key: "home", icon: House, href: RESIDENT_ROOT },
   { key: "myBills", icon: ReceiptText },
   { key: "complaints", icon: MessageSquareWarning },
-  { key: "hisaab", icon: Scale },
+  { key: "profile", icon: UserRound, href: `${RESIDENT_ROOT}/profile` },
 ];
 
 export function ResidentShell({ children }: { children: React.ReactNode }) {

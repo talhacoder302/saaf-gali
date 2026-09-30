@@ -1,18 +1,26 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { z } from "zod";
 
-import { LOCALE_COOKIE, LOCALES } from "./config";
+import { refreshSession } from "@/lib/auth";
+import { updateOwnLanguage } from "@/server/account";
+import { getCurrentUser } from "@/server/session";
+
+import { LOCALES } from "./config";
+import { setLocaleCookie } from "./cookie";
 
 const localeSchema = z.enum(LOCALES);
 
+/**
+ * Switch the interface language. Signed-in users also get it saved on their
+ * account, so it follows them to other devices after the next login.
+ */
 export async function setLocale(locale: string): Promise<void> {
   const parsed = localeSchema.parse(locale);
-  const store = await cookies();
-  store.set(LOCALE_COOKIE, parsed, {
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365,
-    sameSite: "lax",
-  });
+  await setLocaleCookie(parsed);
+
+  if (await getCurrentUser()) {
+    await updateOwnLanguage({ language: parsed });
+    await refreshSession();
+  }
 }
