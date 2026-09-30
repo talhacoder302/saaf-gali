@@ -30,6 +30,8 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
    | --- | --- |
    | `MONGODB_URI` | Atlas connection string, e.g. `mongodb+srv://user:pass@cluster0.xxxxx.mongodb.net/` |
    | `AUTH_SECRET` | Random secret for sessions. Generate with `npx auth secret` |
+   | `SEED_ADMIN_MOBILE` | Mobile number of the first super admin, e.g. `03001234567` (any format like `+92 300 1234567` works) |
+   | `SEED_ADMIN_PASSWORD` | That super admin's password (8 to 72 characters) |
 
    Optional (the app runs without them, the feature is just switched off):
 
@@ -43,11 +45,22 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 
 3. In Atlas, allow your IP address under **Network Access**.
 
-4. Seed the database (creates the `saaf_gali` database with default settings; later modules add demo data):
+4. Seed the database. This creates the `saaf_gali` database, default settings, four demo areas, your super admin and some demo users. It is safe to run again; existing users and passwords are left alone.
 
    ```bash
    npm run seed
    ```
+
+   Demo logins (password `Safai@1234` for all of them):
+
+   | Role | Name | Mobile |
+   | --- | --- | --- |
+   | Area manager | Imran Qureshi (Satellite Town, Bahria Town Phase 4) | 0300-5550101 |
+   | Area manager | Sadia Malik (G-11, I-8) | 0321-5550102 |
+   | Supervisor | Tariq Mehmood (Satellite Town) | 0333-5550103 |
+   | Worker | Muhammad Aslam (Satellite Town) | 0301-5550105 |
+   | Resident | Ayesha Siddiqui (Satellite Town) | 0322-5550109 |
+   | Committee | Col. (R) Khalid Mahmood (Satellite Town) | 0300-5550112 |
 
 5. Start the dev server:
 
@@ -62,9 +75,11 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 | URL | What |
 | --- | --- |
 | `/` | Landing page |
-| `/login` | Login (placeholder until the auth module) |
-| `/admin` | Admin panel shell |
-| `/supervisor`, `/worker`, `/resident` | Mobile shells with bottom navigation |
+| `/login` | Login with mobile number and password |
+| `/admin` | Admin panel (super admin, area manager) |
+| `/admin/users` | Users: search, filter, add, edit, disable, reset password |
+| `/supervisor`, `/worker`, `/resident` | Mobile screens for each role (residents and committee members use `/resident`) |
+| `/{role}/profile` | Profile: language, change password, logout |
 | `/api/health` | JSON health check: database status and which optional features are on |
 
 ## Scripts
@@ -76,6 +91,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 | `npm start` | Run the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
+| `npm test` | Unit tests (Vitest) |
 | `npm run seed` | Seed the database using `.env.local` |
 
 ## Deploying to Hostinger (Node.js hosting)

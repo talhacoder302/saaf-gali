@@ -34,7 +34,8 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 | Folder | What goes there |
 | --- | --- |
 | `src/app/(public)` | Public pages (landing, public hisaab) |
-| `src/app/(auth)` | Login, forgot password |
+| `src/app/(auth)` | Login, forced password change |
+| `src/app/actions` | Server Actions shared by several roles (logout, change password) |
 | `src/app/admin` | Super admin + area manager |
 | `src/app/supervisor` | Supervisor screens (mobile-first) |
 | `src/app/worker` | Worker screens (mobile-first, big buttons, icons) |
@@ -55,12 +56,27 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - `src/lib/env.ts` is the only place that reads `process.env` on the server. Check `features.storage`, `features.email` and `features.push` before using R2, Resend or web push; those features must degrade gracefully when keys are missing.
 - Every user-facing string lives in `src/i18n/en.json` and `src/i18n/ur.json`. Add both when adding a key.
 - Use logical Tailwind classes (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`, `border-s`, `text-start`) so layouts flip correctly in Urdu RTL.
+- Server Actions live in an `actions.ts` next to the route that uses them (e.g. `src/app/admin/users/actions.ts`). They are thin: wrap the service call in `runAction()` (`src/server/run-action.ts`), call `refresh()` after a successful mutation, and return an `ActionResult`.
+- Zod schemas shared by forms and services live in `src/lib/validators/`. Their error messages are keys under `errors` in the i18n files; show them with `useErrorMessage()`.
+- Unit tests sit next to the code as `*.test.ts` and run with `npm test` (Vitest).
+
+## Auth and permissions
+
+- Login is mobile + password (Auth.js Credentials, JWT sessions). Mobile numbers are always stored as `03XXXXXXXXX`; normalise any input with `normalizeMobile()` / `mobileSchema` from `src/lib/mobile.ts`.
+- `src/lib/auth.config.ts` is database-free and shared with `src/proxy.ts`; `src/lib/auth.ts` adds the Credentials provider. Session claims: id, name, role, areaIds, householdId, language, mustChangePassword, sessionVersion.
+- `src/proxy.ts` (Next 16's replacement for middleware.ts) routes by role using `resolveRouteRedirect()` in `src/lib/route-access.ts`: `/admin` super_admin + area_manager, `/supervisor` supervisor, `/worker` worker, `/resident` resident + committee. Users with a temporary password are held on `/change-password`.
+- The proxy only reads the JWT. The real check is `getCurrentUser()` (`src/server/session.ts`), which reloads the user from MongoDB once per request and rejects disabled users and stale sessions (`sessionVersion` mismatch). Bump `sessionVersion` whenever access must end immediately (password change/reset, role or area change, disable).
+- Every service starts with a guard from `src/lib/permissions.ts`: `requireUser()`, `requireRole(...roles)` or `requireAreaAccess(areaId)`. Every list/find query goes through `scopeQueryToUserAreas(actor, filter, field)`. Super admins see all areas; everyone else only their `areaIds`.
+- Pages and layouts use `requirePageUser(roles)` (redirects instead of throwing). Role layouts already call it; pages that need the user call it again (it is cached per request).
+- Area managers may only create/edit supervisor, worker, resident and committee users, only in their own areas (`MANAGEABLE_ROLES` in `src/lib/roles.ts`). Nobody can change their own role or disable themselves, and the last active super admin cannot be demoted or disabled.
+- Failed logins are rate limited per mobile: 5 per 15 minutes (`LoginAttempt` collection with a TTL index). An admin password reset clears the counter.
 
 ## Data model
 
 Later modules implement these models in `src/models`.
 
-- **User**: name, mobile (unique, Pakistani format 03XXXXXXXXX), email (optional), passwordHash, role (super_admin | area_manager | supervisor | worker | resident | committee), areaIds[], householdId (for residents), language (en | ur), status (active | disabled), pushSubscriptions[], lastLoginAt
+- **User**: name, mobile (unique, Pakistani format 03XXXXXXXXX), email (optional), passwordHash, role (super_admin | area_manager | supervisor | worker | resident | committee), areaIds[], householdId (for residents), language (en | ur), status (active | disabled), pushSubscriptions[], lastLoginAt, mustChangePassword, sessionVersion, createdBy. `User.areaIds` is the source of truth for access; `Area.managerIds` etc. are kept in sync by the areas module.
+- **LoginAttempt**: mobile, createdAt (TTL 15 min). One document per failed login.
 - **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status
 - **Block**: areaId, name
 - **Street**: areaId, blockId, name, location {lat, lng} optional, supervisorId
@@ -100,7 +116,7 @@ Later modules implement these models in `src/models`.
 
 ## Definition of done for every module
 
-- `npm run lint`, `npx tsc --noEmit` and `npm run build` all pass with zero errors.
+- `npm run lint`, `npx tsc --noEmit`, `npm test` and `npm run build` all pass with zero errors.
 - Seed data updated and working.
 - CLAUDE.md updated with anything new.
 - Commits pushed.
@@ -114,6 +130,12 @@ Later modules implement these models in `src/models`.
 - Error boundaries (`error.tsx`) receive `retry` (Next 16.3), not `reset`.
 - Scripts run with `tsx --env-file-if-exists=.env.local`, so they see the same env as the app.
 - npm 11 skips some package install scripts (esbuild, @swc/core, unrs-resolver). Everything works without them; do not add `--ignore-scripts` workarounds.
+- `@tanstack/react-table` is v9: use `useTable({ features, columns, data })` with `tableFeatures({...})` and `createColumnHelper<typeof features, Row>()`, not the v8 `useReactTable`/`getCoreRowModel` API. The package ships guides in `node_modules/@tanstack/react-table/skills/`.
+- Mongoose 9 filter types are strict: pass `{ $and: [...] }` (what `scopeQueryToUserAreas` returns) rather than a plain `Record<string, unknown>`.
+- Auth.js `signIn()` in a Server Action rethrows `CredentialsSignin` subclasses; our `LoginError` carries the code (`invalid_credentials`, `rate_limited`, `account_disabled`).
+- `getCurrentUser()` is cached per request. After bumping `sessionVersion` in the same request (password change), don't call it again; use values returned by the service, then `refreshSession()` to re-issue the cookie.
+- `/logout` (GET route) exists only to clear a cookie the database no longer accepts; normal logout is `logoutAction`.
+- Vitest config is `vitest.config.mts` (ESM) so Vite does not warn.
 
 ## Module log
 
@@ -127,3 +149,14 @@ Later modules implement these models in `src/models`.
 - App shells: admin sidebar (`src/components/admin/admin-shell.tsx`), bottom nav for worker, supervisor and resident (`src/components/shared/bottom-nav-shell.tsx`). Nav items not built yet show as "Soon".
 - Landing page at `/`, placeholder login page at `/login`.
 - `src/models/Settings.ts` (singleton) and `scripts/seed.ts`, which creates the `saaf_gali` database with default settings.
+
+### Module 1: auth, users and roles
+
+- Auth.js v5 Credentials login (mobile + password, bcryptjs), JWT session, per-mobile rate limit, `src/proxy.ts` role routing, `/change-password` forced after an admin sets a temporary password, `/logout` for stale sessions.
+- `src/lib/mobile.ts` (normalise any Pakistani format), `src/lib/permissions.ts` (`requireUser`, `requireRole`, `requireAreaAccess`, `scopeQueryToUserAreas`), `src/lib/route-access.ts` (pure routing rules), `src/lib/validators/{auth,users}.ts`.
+- Models: `User`, `Area` (seeded only; area screens come later), `ActivityLog`, `LoginAttempt`.
+- Services: `src/server/auth.ts`, `session.ts`, `users.ts`, `account.ts`, `areas.ts` (`listAreaOptions`), `activity.ts` (`logActivity`), `run-action.ts`, `errors.ts` (`ServiceError`).
+- Admin → Users (`/admin/users`): server-side search, role/status filters and paging (TanStack Table v9), add/edit (role, areas, language), disable/enable, reset password. New credentials can be copied or sent with a wa.me link.
+- Profile page for every role (`/{admin,supervisor,worker,resident}/profile`): details, language (saved on the account), change password, logout. The language switcher also saves to the account when signed in.
+- Seed: 4 areas (Satellite Town, Bahria Town Phase 4, G-11, I-8), super admin from `SEED_ADMIN_MOBILE`/`SEED_ADMIN_PASSWORD`, 12 demo users (password `Safai@1234`, no forced change).
+- Vitest: `mobile`, `permissions`, `route-access`/`roles`, `whatsapp`/`temp-password` and an en/ur translation parity test.
