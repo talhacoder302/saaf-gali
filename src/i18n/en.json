@@ -8,8 +8,13 @@
     "soon": "Soon",
     "menu": "Menu",
     "openMenu": "Open menu",
+    "accountMenu": "Account menu",
     "backHome": "Back to home",
     "tryAgain": "Try again",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "done": "Done",
     "comingSoonTitle": "Coming soon",
     "comingSoonBody": "This section will be ready in an upcoming update.",
     "errorTitle": "Something went wrong",
@@ -22,6 +27,14 @@
     "supervisor": "Supervisor",
     "worker": "Worker",
     "resident": "Resident"
+  },
+  "roles": {
+    "super_admin": "Super admin",
+    "area_manager": "Area manager",
+    "supervisor": "Supervisor",
+    "worker": "Worker",
+    "resident": "Resident",
+    "committee": "Committee member"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -90,7 +103,163 @@
   },
   "auth": {
     "loginTitle": "Log in",
-    "loginSoon": "Login with mobile number and password is coming in the next update."
+    "loginSubtitle": "Use the mobile number and password your area office gave you.",
+    "mobile": "Mobile number",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "loginButton": "Log in",
+    "signingIn": "Logging in...",
+    "forgotPassword": "Forgot your password? Ask your supervisor or area manager to reset it.",
+    "sessionExpired": "Your session has ended. Please log in again.",
+    "changePasswordTitle": "Choose a new password",
+    "changePasswordIntro": "Welcome, {name}. You are using a temporary password. Please choose your own before you continue.",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordRules": "At least {min} characters.",
+    "changePasswordButton": "Change password",
+    "saving": "Saving...",
+    "passwordChanged": "Password changed"
+  },
+  "profile": {
+    "title": "My profile",
+    "details": "My details",
+    "name": "Name",
+    "mobile": "Mobile",
+    "role": "Role",
+    "areas": "Areas",
+    "allAreas": "All areas",
+    "noAreas": "No area assigned yet",
+    "languageTitle": "Language",
+    "languageIntro": "The app will show in this language on every device you use.",
+    "passwordTitle": "Change password",
+    "passwordIntro": "You will be logged out on your other devices."
+  },
+  "errors": {
+    "required": "This field is required.",
+    "invalid": "This value is not valid.",
+    "invalid_input": "Please check the highlighted fields.",
+    "invalidMobile": "Enter a Pakistani mobile number, e.g. 0300-1234567.",
+    "invalidEmail": "Enter a valid email address.",
+    "nameTooShort": "Name is too short.",
+    "nameTooLong": "Name is too long.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordTooLong": "Password is too long.",
+    "passwordsDontMatch": "The passwords do not match.",
+    "passwordSameAsOld": "Choose a password different from the current one.",
+    "wrongPassword": "Current password is not correct.",
+    "wrong_password": "Current password is not correct.",
+    "areaRequired": "Choose at least one area.",
+    "oneAreaOnly": "A resident can belong to one area only.",
+    "areaNotFound": "One of the chosen areas no longer exists.",
+    "mobileTaken": "Another user already has this mobile number.",
+    "mobile_taken": "Another user already has this mobile number.",
+    "cannotChangeOwnRole": "You cannot change your own role.",
+    "cannot_change_own_role": "You cannot change your own role.",
+    "cannot_disable_self": "You cannot disable your own account.",
+    "use_profile_for_own_password": "Change your own password from your profile page.",
+    "last_super_admin": "This is the last active super admin. Add another one first.",
+    "invalid_credentials": "Wrong mobile number or password.",
+    "rate_limited": "Too many failed attempts. Please wait 15 minutes and try again.",
+    "account_disabled": "Your account has been disabled. Please contact your area office.",
+    "unauthenticated": "Your session has ended. Please log in again.",
+    "forbidden": "You are not allowed to do this.",
+    "password_change_required": "Please change your temporary password first.",
+    "not_found": "This record no longer exists.",
+    "unknown": "Something went wrong. Please try again."
+  },
+  "users": {
+    "title": "Users",
+    "intro": "Everyone who can log in: staff, workers, residents and committee members.",
+    "addUser": "Add user",
+    "searchPlaceholder": "Search by name, mobile or email",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "allAreas": "All areas",
+    "clearFilters": "Clear filters",
+    "columns": {
+      "name": "Name",
+      "mobile": "Mobile",
+      "role": "Role",
+      "areas": "Areas",
+      "status": "Status",
+      "lastLogin": "Last login",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "never": "Never",
+    "tempPasswordBadge": "Temporary password",
+    "actionsFor": "Actions for {name}",
+    "actions": {
+      "edit": "Edit",
+      "resetPassword": "Reset password",
+      "disable": "Disable",
+      "enable": "Enable"
+    },
+    "emptyTitle": "No users yet",
+    "emptyBody": "Add your supervisors, workers and residents so they can log in.",
+    "noResults": "No users match",
+    "noResultsHint": "Try a different name or number, or clear the filters.",
+    "total": "{total, plural, one {# user} other {# users}}",
+    "pageOf": "Page {page} of {pageCount}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "created": "User added",
+    "updated": "Changes saved",
+    "disabledToast": "User disabled",
+    "enabledToast": "User enabled",
+    "form": {
+      "createTitle": "Add user",
+      "createDescription": "They will log in with this mobile number and must choose their own password the first time.",
+      "editTitle": "Edit user",
+      "editDescription": "Changing the role or areas logs the user out so the change takes effect.",
+      "createdTitle": "User added",
+      "createdDescription": "Send these login details to {name}.",
+      "name": "Full name",
+      "mobile": "Mobile number",
+      "email": "Email",
+      "optional": "Optional",
+      "role": "Role",
+      "ownRoleLocked": "You cannot change your own role.",
+      "language": "Language",
+      "areas": "Areas",
+      "areasHint": "The user will only see data for these areas.",
+      "areasHintResident": "The area where the resident lives.",
+      "noAreas": "No areas have been set up yet.",
+      "tempPassword": "Temporary password",
+      "tempPasswordHint": "The user must change it after their first login.",
+      "generate": "New",
+      "create": "Add user"
+    },
+    "reset": {
+      "title": "Reset password for {name}",
+      "description": "{name} will be logged out and must choose a new password after logging in with this one.",
+      "shareDescription": "Send the new login details.",
+      "button": "Reset password",
+      "done": "Password reset"
+    },
+    "credentials": {
+      "mobile": "Mobile",
+      "password": "Password",
+      "hint": "The password works once: they must choose their own after logging in.",
+      "copy": "Copy details",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Please copy the details by hand.",
+      "whatsapp": "Send on WhatsApp",
+      "message": "Assalam-o-Alaikum {name}! Your Saaf Gali login:\n{url}\nMobile: {mobile}\nTemporary password: {password}\nYou will be asked to choose your own password after logging in."
+    },
+    "statusDialog": {
+      "disableTitle": "Disable {name}?",
+      "disableBody": "They will be logged out and will not be able to log in until you enable the account again. Their records stay as they are.",
+      "disableButton": "Disable",
+      "enableTitle": "Enable {name}?",
+      "enableBody": "They will be able to log in again with their current password.",
+      "enableButton": "Enable"
+    }
   },
   "admin": {
     "title": "Dashboard",
@@ -99,7 +268,7 @@
     "emptyBody": "Once areas and households are added, your dashboard will fill up."
   },
   "supervisor": {
-    "title": "Today's work",
+    "title": "Assalam-o-Alaikum, {name}",
     "intro": "Check your team's attendance, review photos and handle complaints.",
     "actions": {
       "team": "My team",
@@ -108,7 +277,7 @@
     }
   },
   "worker": {
-    "title": "Assalam-o-Alaikum!",
+    "title": "Assalam-o-Alaikum, {name}!",
     "intro": "Your duties for today will appear here.",
     "actions": {
       "startWork": "Start work",
@@ -118,13 +287,13 @@
     }
   },
   "resident": {
-    "title": "Welcome",
+    "title": "Welcome, {name}",
     "intro": "See your fee bills and payments, and file complaints about your street.",
     "actions": {
       "myBills": "My bills",
       "newComplaint": "File a complaint",
       "hisaab": "Area hisaab",
-      "profile": "Profile"
+      "profile": "My profile"
     }
   }
 }
