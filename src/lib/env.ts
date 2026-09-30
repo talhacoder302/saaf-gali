@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { normalizeMobile } from "@/lib/mobile";
+
 // Treat empty strings (e.g. "R2_BUCKET=" in .env.local) as missing.
 const optionalString = z.preprocess(
   (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
@@ -40,8 +42,8 @@ const envSchema = z.object({
   VAPID_SUBJECT: optionalString,
 
   SEED_ADMIN_MOBILE: optionalString.refine(
-    (value) => value === undefined || /^03\d{9}$/.test(value),
-    "SEED_ADMIN_MOBILE must look like 03XXXXXXXXX",
+    (value) => value === undefined || normalizeMobile(value) !== null,
+    "SEED_ADMIN_MOBILE must be a Pakistani mobile number, e.g. 03001234567",
   ),
   SEED_ADMIN_PASSWORD: optionalString,
 });
