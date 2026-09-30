@@ -1,5 +1,6 @@
 import "server-only";
 
+import { refresh } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
@@ -37,4 +38,11 @@ export async function runAction<T>(fn: () => Promise<T>): Promise<ActionResult<T
     console.error("[action] unexpected error", error);
     return { ok: false, error: "unknown" };
   }
+}
+
+/** runAction for mutations: on success, re-render the current page with fresh data. */
+export async function runMutation<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
+  const result = await runAction(fn);
+  if (result.ok) refresh();
+  return result;
 }

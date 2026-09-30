@@ -13,6 +13,7 @@ import {
   type Actor,
   type MongoFilter,
 } from "@/lib/permissions";
+import { escapeRegex } from "@/lib/regex";
 import { ADMIN_ROLES, canManageRole, MANAGEABLE_ROLES, roleNeedsArea, type Role } from "@/lib/roles";
 import {
   createUserSchema,
@@ -31,6 +32,7 @@ import { LoginAttempt } from "@/models/LoginAttempt";
 import { User, type UserDoc, type UserStatus } from "@/models/User";
 import { logActivity } from "@/server/activity";
 import { ServiceError } from "@/server/errors";
+import { syncUserAreaMemberships } from "@/server/team-sync";
 
 export type UserRow = {
   id: string;
@@ -112,10 +114,6 @@ async function resolveAreaIds(
   if (unique.some((id) => !actor.areaIds.includes(id))) throw new PermissionError("forbidden");
   const kept = existing.map((id) => id.toString()).filter((id) => !actor.areaIds.includes(id));
   return [...new Set([...kept, ...unique])].map((id) => new Types.ObjectId(id));
-}
-
-function escapeRegex(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function searchFilter(q: string): MongoFilter {
@@ -222,6 +220,7 @@ export async function createUser(input: CreateUserInput): Promise<{ id: string }
       mustChangePassword: true,
       createdBy: actor.id,
     });
+    await syncUserAreaMemberships(user._id, data.role, areaIds);
 
     await logActivity({
       actorId: actor.id,
@@ -294,6 +293,7 @@ export async function updateUser(input: UpdateUserInput): Promise<void> {
     if (isDuplicateMobile(error)) throw new ServiceError("mobile_taken", { mobile: "mobileTaken" });
     throw error;
   }
+  if (roleChanged || areasChanged) await syncUserAreaMemberships(target._id, data.role, areaIds);
 
   await logActivity({
     actorId: actor.id,
