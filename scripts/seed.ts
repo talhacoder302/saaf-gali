@@ -17,8 +17,11 @@ import { hashPassword } from "@/lib/password";
 import type { Role } from "@/lib/roles";
 import { passwordSchema } from "@/lib/validators/auth";
 import { Area, type City } from "@/models/Area";
+import { Block } from "@/models/Block";
 import { Settings } from "@/models/Settings";
+import { Street } from "@/models/Street";
 import { User } from "@/models/User";
+import { syncUserAreaMemberships } from "@/server/team-sync";
 
 /**
  * Password for every demo user. Demo users skip the forced password change so
@@ -144,6 +147,119 @@ async function seedDemoUsers(areaIds: Map<string, Types.ObjectId>) {
   console.log(`  demo users: ${created} created, ${DEMO_USERS.length - created} already there`);
 }
 
+/** Fill Area.managerIds / supervisorIds / committeeIds from every user's areaIds. */
+async function syncAllTeams() {
+  const users = await User.find({}).select("role areaIds").lean();
+  for (const user of users) await syncUserAreaMemberships(user._id, user.role, user.areaIds);
+  console.log(`  area teams synced for ${users.length} users`);
+}
+
+type DemoBlock = {
+  name: string;
+  streets: string[];
+  /** Roughly the middle of the block; streets are spread north of it. */
+  origin: { lat: number; lng: number };
+  supervisorMobile?: string;
+};
+
+const DEMO_LAYOUT: { area: string; blocks: DemoBlock[] }[] = [
+  {
+    area: "Satellite Town",
+    blocks: [
+      {
+        name: "Block A",
+        streets: ["Street 1", "Street 2", "Street 3", "Street 4", "Street 5", "Masjid Wali Gali"],
+        origin: { lat: 33.6402, lng: 73.0618 },
+        supervisorMobile: "03335550103",
+      },
+      {
+        name: "Block B",
+        streets: ["Street 1", "Street 2", "Street 3", "Street 4", "Street 5", "Street 6", "Street 7", "Commercial Market Lane"],
+        origin: { lat: 33.6351, lng: 73.0702 },
+        supervisorMobile: "03335550103",
+      },
+      {
+        // Left without a supervisor so the "streets without supervisor" badge has something to show.
+        name: "Block C",
+        streets: ["Street 1", "Street 2", "Street 3", "Street 4", "Park Road"],
+        origin: { lat: 33.6298, lng: 73.0649 },
+      },
+    ],
+  },
+  {
+    area: "G-11",
+    blocks: [
+      {
+        name: "G-11/1",
+        streets: ["Street 10", "Street 11", "Street 12", "Street 13", "Street 14", "Street 15", "Street 16"],
+        origin: { lat: 33.6736, lng: 72.9912 },
+        supervisorMobile: "03455550104",
+      },
+      {
+        name: "G-11/2",
+        streets: ["Street 20", "Street 21", "Street 22", "Street 23", "Street 24"],
+        origin: { lat: 33.6702, lng: 72.9987 },
+        supervisorMobile: "03455550104",
+      },
+      {
+        name: "G-11/3",
+        streets: ["Street 30", "Street 31", "Street 32", "Street 33", "Street 34", "Street 35"],
+        origin: { lat: 33.6664, lng: 72.9931 },
+        supervisorMobile: "03455550104",
+      },
+    ],
+  },
+];
+
+async function seedBlocksAndStreets(areaIds: Map<string, Types.ObjectId>) {
+  let blocks = 0;
+  let streets = 0;
+  for (const { area, blocks: demoBlocks } of DEMO_LAYOUT) {
+    const areaId = areaIds.get(area);
+    if (!areaId) throw new Error(`Unknown area ${area}`);
+
+    for (const demoBlock of demoBlocks) {
+      const block = await Block.findOneAndUpdate(
+        { areaId, name: demoBlock.name },
+        { $setOnInsert: { areaId, name: demoBlock.name } },
+        { upsert: true, returnDocument: "after" },
+      );
+      blocks += 1;
+
+      const supervisor = demoBlock.supervisorMobile
+        ? await User.findOne({ mobile: demoBlock.supervisorMobile, role: "supervisor", areaIds: areaId }).select("_id").lean()
+        : null;
+
+      for (const [index, name] of demoBlock.streets.entries()) {
+        // Only the first half get a location, to show that it is optional.
+        const withLocation = index < Math.ceil(demoBlock.streets.length / 2);
+        await Street.updateOne(
+          { blockId: block._id, name },
+          {
+            $setOnInsert: {
+              areaId,
+              blockId: block._id,
+              name,
+              ...(supervisor ? { supervisorId: supervisor._id } : {}),
+              ...(withLocation
+                ? {
+                    location: {
+                      lat: Math.round((demoBlock.origin.lat + index * 0.0006) * 1e6) / 1e6,
+                      lng: Math.round((demoBlock.origin.lng + index * 0.0002) * 1e6) / 1e6,
+                    },
+                  }
+                : {}),
+            },
+          },
+          { upsert: true },
+        );
+        streets += 1;
+      }
+    }
+  }
+  console.log(`  ${blocks} blocks and ${streets} streets ready`);
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -152,6 +268,8 @@ async function main() {
   const areaIds = await seedAreas();
   await seedSuperAdmin();
   await seedDemoUsers(areaIds);
+  await syncAllTeams();
+  await seedBlocksAndStreets(areaIds);
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
