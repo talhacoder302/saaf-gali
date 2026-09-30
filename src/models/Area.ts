@@ -1,21 +1,23 @@
 import { model, models, Schema, type InferSchemaType, type Model, type Types } from "mongoose";
 
-export const CITIES = ["Rawalpindi", "Islamabad"] as const;
-export type City = (typeof CITIES)[number];
+import { AREA_STATUSES, CITIES } from "@/lib/areas";
 
-// Area management screens come in a later module. For now areas are created by
-// the seed script so users can be assigned to them.
+export type { AreaStatus, City } from "@/lib/areas";
+
 const areaSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
     city: { type: String, enum: CITIES, required: true },
     description: { type: String, trim: true, maxlength: 500 },
+    // Kept in sync with User.areaIds by src/server/area-team.ts. User.areaIds
+    // decides access; these lists are for showing the team quickly.
     managerIds: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     supervisorIds: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     committeeIds: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     // Whole rupees.
     defaultMonthlyFee: { type: Number, required: true, min: 0, default: 150 },
-    status: { type: String, enum: ["active", "inactive"], default: "active" },
+    // Archived areas are hidden from pickers and read-only, but keep their history.
+    status: { type: String, enum: AREA_STATUSES, default: "active", index: true },
   },
   { timestamps: true },
 );
