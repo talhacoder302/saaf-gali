@@ -45,7 +45,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 
 3. In Atlas, allow your IP address under **Network Access**.
 
-4. Seed the database. This creates the `saaf_gali` database, default settings, four demo areas, your super admin and some demo users. It is safe to run again; existing users and passwords are left alone.
+4. Seed the database. This creates the `saaf_gali` database, default settings, four demo areas (Satellite Town and G-11 come with blocks and streets), your super admin and some demo users. It is safe to run again; existing users, passwords and your own changes are left alone.
 
    ```bash
    npm run seed
@@ -78,6 +78,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 | `/login` | Login with mobile number and password |
 | `/admin` | Admin panel (super admin, area manager) |
 | `/admin/users` | Users: search, filter, add, edit, disable, reset password |
+| `/admin/areas` | Areas: add, edit, archive; open one to manage its blocks, streets and team |
 | `/supervisor`, `/worker`, `/resident` | Mobile screens for each role (residents and committee members use `/resident`) |
 | `/{role}/profile` | Profile: language, change password, logout |
 | `/api/health` | JSON health check: database status and which optional features are on |

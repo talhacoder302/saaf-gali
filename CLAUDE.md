@@ -71,15 +71,26 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - Area managers may only create/edit supervisor, worker, resident and committee users, only in their own areas (`MANAGEABLE_ROLES` in `src/lib/roles.ts`). Nobody can change their own role or disable themselves, and the last active super admin cannot be demoted or disabled.
 - Failed logins are rate limited per mobile: 5 per 15 minutes (`LoginAttempt` collection with a TTL index). An admin password reset clears the counter.
 
+## Areas, blocks, streets
+
+- Load an area through `loadAreaInScope(actor, areaId, { forWrite })` (`src/server/area-access.ts`). Out-of-scope areas throw `not_found`, exactly like missing ones; `forWrite` refuses archived areas (`area_archived`). Blocks and streets are found with `scopeQueryToUserAreas(actor, { _id })` and then their area is loaded for write.
+- Only super admins create, archive and restore areas. Area managers edit their own areas and manage blocks, streets, supervisors and committee members there. Archived areas are read-only and disappear from pickers (`listAreaOptions` returns active areas only).
+- Team membership: `User.areaIds` decides access. After any change to a user's role or areas call `syncUserAreaMemberships()` (`src/server/team-sync.ts`), which keeps `Area.managerIds/supervisorIds/committeeIds` in step and removes the user as supervisor from streets outside their areas. The users service and area team service already do this.
+- A street's supervisor must be an active supervisor of that street's area. Streets can move between blocks of the same area only.
+- Blocks can only be deleted when they have no streets, streets only when they have no households.
+- Names are unique case-insensitively: area per city, block per area, street per block (`exactNameRegex` in `src/lib/regex.ts`). Lists sort naturally ("Street 2" before "Street 10") with `src/lib/sort.ts`.
+- Locations are optional `{ lat, lng }`, must fall inside Pakistan (catches swapped values), and are picked with `LocationPicker` (browser geolocation, no map API). `mapLink()` gives a free OpenStreetMap link.
+- Constants used by client code (cities, statuses, team roles, tabs) live in `src/lib/areas.ts`, never in models, so client bundles don't pull in mongoose.
+
 ## Data model
 
 Later modules implement these models in `src/models`.
 
 - **User**: name, mobile (unique, Pakistani format 03XXXXXXXXX), email (optional), passwordHash, role (super_admin | area_manager | supervisor | worker | resident | committee), areaIds[], householdId (for residents), language (en | ur), status (active | disabled), pushSubscriptions[], lastLoginAt, mustChangePassword, sessionVersion, createdBy. `User.areaIds` is the source of truth for access; `Area.managerIds` etc. are kept in sync by the areas module.
 - **LoginAttempt**: mobile, createdAt (TTL 15 min). One document per failed login.
-- **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status
-- **Block**: areaId, name
-- **Street**: areaId, blockId, name, location {lat, lng} optional, supervisorId
+- **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status (active | archived). Unique (city, name).
+- **Block**: areaId, name. Unique (areaId, name).
+- **Street**: areaId, blockId, name, location {lat, lng} optional, supervisorId. Unique (blockId, name).
 - **Household**: areaId, blockId, streetId, houseNumber, ownerName, occupantType (owner | tenant), contactName, mobile, email, monthlyFee, status (active | vacant | exempt), notes. Unique index on (streetId, houseNumber).
 - **Worker**: userId (optional, if they have a phone), name, mobile, cnic, address, monthlySalary, joiningDate, areaIds[], status
 - **Duty**: workerId, streetId, areaId, date, shift (morning | evening), status (scheduled | in_progress | completed | missed | reassigned), reassignedTo
@@ -136,6 +147,10 @@ Later modules implement these models in `src/models`.
 - `getCurrentUser()` is cached per request. After bumping `sessionVersion` in the same request (password change), don't call it again; use values returned by the service, then `refreshSession()` to re-issue the cookie.
 - `/logout` (GET route) exists only to clear a cookie the database no longer accepts; normal logout is `logoutAction`.
 - Vitest config is `vitest.config.mts` (ESM) so Vite does not warn.
+- Server Components get a reference, not the value, when they import a non-component export from a `"use client"` file. Keep shared constants in `src/lib`.
+- `scripts/` cannot import files that start with `import "server-only"` (it throws outside Next). Shared DB helpers that the seed needs (like `team-sync.ts`) leave that import out.
+- `notFound()` in a page under a `loading.tsx` renders the not-found UI with HTTP 200 because the response is already streaming. That is expected.
+- Every page ships the full message catalogue to the client, so page HTML contains all example strings; don't rely on "text not in HTML" for scope checks in tests.
 
 ## Module log
 
@@ -160,3 +175,12 @@ Later modules implement these models in `src/models`.
 - Profile page for every role (`/{admin,supervisor,worker,resident}/profile`): details, language (saved on the account), change password, logout. The language switcher also saves to the account when signed in.
 - Seed: 4 areas (Satellite Town, Bahria Town Phase 4, G-11, I-8), super admin from `SEED_ADMIN_MOBILE`/`SEED_ADMIN_PASSWORD`, 12 demo users (password `Safai@1234`, no forced change).
 - Vitest: `mobile`, `permissions`, `route-access`/`roles`, `whatsapp`/`temp-password` and an en/ur translation parity test.
+
+### Module 2: areas and locations
+
+- Models: `Block`, `Street`, `Household` (model only, for counts and delete checks; household screens come later). `Area.status` is now `active | archived`. New ActivityLog actions: archive, restore, assign, unassign.
+- Services: `src/server/areas.ts` (list with block/street/household counts, detail, create, edit, archive/restore), `blocks.ts`, `streets.ts`, `area-team.ts` (team, candidates, assign/remove, area supervisors), `area-access.ts`, `team-sync.ts`. `runMutation()` in `run-action.ts` = runAction + refresh.
+- Admin → Areas (`/admin/areas`): search, active/archived tabs, counts, add/edit/archive/restore. Area detail (`/admin/areas/[areaId]`) with tabs in the URL (`?tab=blocks|streets|team`, `?block=` filter): blocks (add, rename, delete when empty), streets (add, edit, move between blocks, supervisor, optional GPS location, delete when no households), team (area managers, supervisors, committee; add from eligible users, remove).
+- Shared components: `LocationPicker`, `ConfirmDialog`.
+- Seed: blocks and streets for Satellite Town (Block A–C, 19 streets) and G-11 (G-11/1–3, 18 streets), supervisors on most streets, locations on about half; syncs every user's area team.
+- Tests: `src/lib/areas.test.ts` (Pakistan bounds, map link, natural sort, area/location/street schemas).
