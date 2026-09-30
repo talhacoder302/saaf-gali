@@ -20,7 +20,8 @@
     "errorTitle": "Something went wrong",
     "errorBody": "Please try again. If the problem continues, contact your supervisor.",
     "notFoundTitle": "Page not found",
-    "notFoundBody": "The page you are looking for does not exist or has moved."
+    "notFoundBody": "The page you are looking for does not exist or has moved.",
+    "backToDashboard": "Back to dashboard"
   },
   "portal": {
     "admin": "Admin panel",
@@ -167,7 +168,26 @@
     "forbidden": "You are not allowed to do this.",
     "password_change_required": "Please change your temporary password first.",
     "not_found": "This record no longer exists.",
-    "unknown": "Something went wrong. Please try again."
+    "unknown": "Something went wrong. Please try again.",
+    "descriptionTooLong": "Description is too long.",
+    "feeInvalid": "Enter a fee between Rs. 0 and Rs. 100,000.",
+    "feeWholeRupees": "Enter the fee in whole rupees.",
+    "invalidLocation": "Enter both latitude and longitude as numbers.",
+    "locationOutsidePakistan": "This location is outside Pakistan. Check that latitude and longitude are not swapped.",
+    "areaNameTaken": "An area with this name already exists in this city.",
+    "area_name_taken": "An area with this name already exists in this city.",
+    "area_archived": "This area is archived. Restore it before making changes.",
+    "blockNameTaken": "This area already has a block with this name.",
+    "block_name_taken": "This area already has a block with this name.",
+    "streetNameTaken": "This block already has a street with this name.",
+    "street_name_taken": "This block already has a street with this name.",
+    "block_has_streets": "Move or delete this block's streets first.",
+    "street_has_households": "This street has households. Move them before deleting the street.",
+    "blockNotFound": "Choose a block in this area.",
+    "blockNotInArea": "A street can only move to a block in the same area.",
+    "supervisorNotInArea": "Choose an active supervisor of this area.",
+    "not_team_role": "Only area managers, supervisors and committee members can be on an area team.",
+    "user_disabled": "This user is disabled. Enable them first."
   },
   "users": {
     "title": "Users",
@@ -295,5 +315,181 @@
       "hisaab": "Area hisaab",
       "profile": "My profile"
     }
+  },
+  "location": {
+    "useCurrent": "Use my current location",
+    "locating": "Finding location...",
+    "openMap": "Check on map",
+    "clear": "Clear",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "accuracy": "Location found (accurate to about {meters} m).",
+    "unsupported": "This browser cannot share its location. Type the coordinates instead.",
+    "denied": "Location permission was refused. Allow it in the browser, or type the coordinates.",
+    "failed": "Could not get the location. Try again outdoors, or type the coordinates."
+  },
+  "areas": {
+    "title": "Areas",
+    "intro": "Localities you clean, with their blocks, streets and teams.",
+    "introManager": "The areas you manage, with their blocks, streets and teams.",
+    "addArea": "Add area",
+    "searchPlaceholder": "Search areas",
+    "backToAreas": "All areas",
+    "noManager": "No manager yet",
+    "actionsFor": "Actions for {name}",
+    "created": "Area added",
+    "updated": "Area updated",
+    "archived": "Area archived",
+    "restored": "Area restored",
+    "archivedNotice": "This area is archived. It is read-only and hidden from pickers. Restore it to make changes.",
+    "emptyTitle": "No areas yet",
+    "emptyBody": "Add your first area, then its blocks and streets.",
+    "emptyBodyManager": "You have not been assigned to an area yet. Ask a super admin.",
+    "noArchived": "No archived areas",
+    "noResults": "No areas match",
+    "noResultsHint": "Try a different name.",
+    "cities": {
+      "Rawalpindi": "Rawalpindi",
+      "Islamabad": "Islamabad"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "tabs": {
+      "blocks": "Blocks",
+      "streets": "Streets",
+      "team": "Team"
+    },
+    "columns": {
+      "name": "Area",
+      "managers": "Area managers",
+      "blocks": "Blocks",
+      "streets": "Streets",
+      "households": "Households",
+      "fee": "Default fee",
+      "actions": "Actions"
+    },
+    "actions": {
+      "open": "Open",
+      "edit": "Edit",
+      "archive": "Archive",
+      "restore": "Restore"
+    },
+    "archiveDialog": {
+      "title": "Archive {name}?",
+      "body": "The area becomes read-only and disappears from pickers. Nothing is deleted, and you can restore it later."
+    },
+    "restoreDialog": {
+      "title": "Restore {name}?",
+      "body": "The area becomes active again and can be edited and assigned."
+    },
+    "form": {
+      "createTitle": "Add area",
+      "createDescription": "An area is a locality such as Satellite Town or G-11. You can add blocks and streets next.",
+      "editTitle": "Edit area",
+      "editDescription": "Changes apply straight away.",
+      "name": "Area name",
+      "namePlaceholder": "e.g. Satellite Town",
+      "city": "City",
+      "fee": "Default monthly fee",
+      "feeHint": "New households in this area start with this fee. It can be changed per house.",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional: which blocks or sectors it covers",
+      "create": "Add area"
+    }
+  },
+  "blocks": {
+    "add": "Add block",
+    "createTitle": "Add block",
+    "editTitle": "Rename block",
+    "formDescription": "A block, sector or phase inside the area.",
+    "name": "Block name",
+    "namePlaceholder": "e.g. Block A or G-11/2",
+    "create": "Add block",
+    "created": "Block added",
+    "updated": "Block renamed",
+    "deleted": "Block deleted",
+    "delete": "Delete",
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "The block has no streets, so nothing else is affected.",
+    "deleteBlocked": "Delete or move its streets first",
+    "editFor": "Rename {name}",
+    "deleteFor": "Delete {name}",
+    "streetCount": "{count, plural, one {# street} other {# streets}}",
+    "emptyTitle": "No blocks yet",
+    "emptyBody": "Add the blocks or sectors of this area, then add streets to them.",
+    "columns": {
+      "name": "Block",
+      "streets": "Streets",
+      "households": "Households",
+      "actions": "Actions"
+    }
+  },
+  "streets": {
+    "add": "Add street",
+    "createTitle": "Add street",
+    "editTitle": "Edit street",
+    "formDescription": "Streets are what workers clean each day.",
+    "name": "Street name",
+    "namePlaceholder": "e.g. Street 5",
+    "block": "Block",
+    "chooseBlock": "Choose a block",
+    "allBlocks": "All blocks",
+    "supervisor": "Supervisor",
+    "noSupervisor": "No supervisor",
+    "noSupervisorsHint": "Add a supervisor to this area's team first.",
+    "location": "Location",
+    "locationHint": "Optional. Stand in the street and tap the button, or type the coordinates.",
+    "viewMap": "Map",
+    "create": "Add street",
+    "created": "Street added",
+    "updated": "Street updated",
+    "deleted": "Street deleted",
+    "delete": "Delete",
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "The street has no households, so nothing else is affected.",
+    "deleteBlocked": "Move its households first",
+    "editFor": "Edit {name}",
+    "deleteFor": "Delete {name}",
+    "unsupervised": "{count, plural, one {# street without supervisor} other {# streets without supervisor}}",
+    "emptyTitle": "No streets here yet",
+    "emptyBody": "Add the streets of this block.",
+    "needBlockFirst": "Add a block first, then its streets.",
+    "columns": {
+      "name": "Street",
+      "block": "Block",
+      "supervisor": "Supervisor",
+      "location": "Location",
+      "households": "Households",
+      "actions": "Actions"
+    }
+  },
+  "team": {
+    "roles": {
+      "area_manager": "Area managers",
+      "supervisor": "Supervisors",
+      "committee": "Committee"
+    },
+    "hints": {
+      "area_manager": "Run the area: users, fees and expenses.",
+      "supervisor": "Check workers' photos and handle complaints.",
+      "committee": "Residents who approve large expenses."
+    },
+    "addLabel": {
+      "area_manager": "Choose an area manager",
+      "supervisor": "Choose a supervisor",
+      "committee": "Choose a committee member"
+    },
+    "add": "Add",
+    "added": "Added to the team",
+    "none": "Nobody yet",
+    "noCandidates": "No one else to add. Create the user on the Users page first.",
+    "remove": "Remove",
+    "removed": "Removed from the team",
+    "removeFor": "Remove {name}",
+    "removeTitle": "Remove {name} from this area?",
+    "removeBody": "They will lose access to this area and be logged out so the change takes effect.",
+    "removeBodySupervisor": "They will lose access to this area and be logged out. Streets they supervise here will have no supervisor until you pick a new one."
   }
 }
