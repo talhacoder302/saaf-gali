@@ -82,6 +82,16 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - Locations are optional `{ lat, lng }`, must fall inside Pakistan (catches swapped values), and are picked with `LocationPicker` (browser geolocation, no map API). `mapLink()` gives a free OpenStreetMap link.
 - Constants used by client code (cities, statuses, team roles, tabs) live in `src/lib/areas.ts`, never in models, so client bundles don't pull in mongoose.
 
+## Households
+
+- A household's `areaId` and `blockId` are always copied from its street (set by the service, never by the form). Moving a house to another street updates them; residents linked to the house follow it to the new area.
+- **Billing rule:** only `active` households get fee bills. `vacant` and `exempt` never do. The billing module must use `isBillable(status)` from `src/lib/households.ts`, not its own check.
+- The monthly fee defaults to the area's `defaultMonthlyFee` (form pre-fills it; Excel rows with an empty fee get it) and can be changed per house. Whole rupees.
+- House numbers are unique per street, case-insensitively. Household mobiles are not unique (one owner, several houses).
+- Excel: `GET /admin/households/template` and `GET /admin/households/export?…filters` (route handlers using `src/server/household-excel.ts`, same columns as `EXCEL_COLUMNS`). Import is two steps: `previewImportAction(FormData)` parses and validates without saving; `importHouseholdsAction(rows)` re-validates the rows the browser sends back and inserts only valid ones. Parsing/validation is pure and tested in `src/lib/household-import.ts` (header aliases, Urdu values for occupant/status, duplicate in DB and in file, missing street, bad mobile). Users can only import into active areas in their scope.
+- "Create resident login" (`createResidentLogin`) makes a `resident` user with the household's mobile, `householdId` and area, and a temporary password.
+- Server Actions that take a file receive `FormData` (`formData.get("file")`); the action body limit is raised to 5 MB in `next.config.ts`.
+
 ## Data model
 
 Later modules implement these models in `src/models`.
@@ -91,7 +101,7 @@ Later modules implement these models in `src/models`.
 - **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status (active | archived). Unique (city, name).
 - **Block**: areaId, name. Unique (areaId, name).
 - **Street**: areaId, blockId, name, location {lat, lng} optional, supervisorId. Unique (blockId, name).
-- **Household**: areaId, blockId, streetId, houseNumber, ownerName, occupantType (owner | tenant), contactName, mobile, email, monthlyFee, status (active | vacant | exempt), notes. Unique index on (streetId, houseNumber).
+- **Household**: areaId, blockId, streetId, houseNumber, ownerName, occupantType (owner | tenant), contactName, mobile, email, monthlyFee, status (active | vacant | exempt), notes, createdBy. Unique index on (streetId, houseNumber). Only active households are billed.
 - **Worker**: userId (optional, if they have a phone), name, mobile, cnic, address, monthlySalary, joiningDate, areaIds[], status
 - **Duty**: workerId, streetId, areaId, date, shift (morning | evening), status (scheduled | in_progress | completed | missed | reassigned), reassignedTo
 - **WorkLog**: dutyId, workerId, streetId, startPhotoUrl, endPhotoUrl, startAt, endAt, startLocation, endLocation, supervisorStatus (pending | approved | redo), supervisorNote
@@ -151,6 +161,10 @@ Later modules implement these models in `src/models`.
 - `scripts/` cannot import files that start with `import "server-only"` (it throws outside Next). Shared DB helpers that the seed needs (like `team-sync.ts`) leave that import out.
 - `notFound()` in a page under a `loading.tsx` renders the not-found UI with HTTP 200 because the response is already streaming. That is expected.
 - Every page ships the full message catalogue to the client, so page HTML contains all example strings; don't rely on "text not in HTML" for scope checks in tests.
+- A message key can't be both a string and a group: `households.import` is the import dialog's group, so the button label is `households.importLabel`.
+- Zod schemas that transform (e.g. `optionalMobileSchema` turns "" into null) have different input and output types: use `useForm<Input, unknown, Output>` and send the input shape to the action.
+- Seed randomness is seeded from names (area/block/street), never from database ids, so every database gets the same demo data.
+- To call a FormData Server Action by hand (tests), React's encoding is: file fields as `_1_<name>` first, then the root field `0` = `["$K1"]`. Order matters.
 
 ## Module log
 
@@ -184,3 +198,11 @@ Later modules implement these models in `src/models`.
 - Shared components: `LocationPicker`, `ConfirmDialog`.
 - Seed: blocks and streets for Satellite Town (Block A–C, 19 streets) and G-11 (G-11/1–3, 18 streets), supervisors on most streets, locations on about half; syncs every user's area team.
 - Tests: `src/lib/areas.test.ts` (Pakistan bounds, map link, natural sort, area/location/street schemas).
+
+### Module 3: households
+
+- `Household` model finished (`createdBy`, indexes), `src/lib/households.ts` (statuses, `isBillable`, Excel columns), `src/lib/validators/households.ts`, `optionalMobileSchema` in `src/lib/mobile.ts`.
+- Services: `src/server/households.ts` (list with filters/search/paging, detail with linked residents, create, edit, resident login), `src/server/locations.ts` (area → block → street tree for filters, forms and import lookup), `src/server/household-excel.ts` (template, export, import preview and commit). New ActivityLog action `import`.
+- Admin → Households (`/admin/households`): cascading area/block/street filters, status filter, search by house number, name or mobile (any format), add/edit dialog, Excel import dialog (template → upload → per-row preview → import), export of the current filter. Detail page (`/admin/households/[id]`) with details, linked residents, "Create resident login", and placeholder cards for fee history and complaints.
+- Seed: 15–30 households on every street (about 870), with tenants, vacant/exempt houses, custom fees and mobiles; links the demo residents Ayesha and Farhan to a house.
+- Tests: `src/lib/household-import.test.ts`.
