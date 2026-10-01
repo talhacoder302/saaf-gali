@@ -12,12 +12,14 @@ import type { Types } from "mongoose";
 import type { Locale } from "@/i18n/config";
 import { connectDB, disconnectDB } from "@/lib/db";
 import { env } from "@/lib/env";
+import type { HouseholdStatus, OccupantType } from "@/lib/households";
 import { formatMobile, normalizeMobile } from "@/lib/mobile";
 import { hashPassword } from "@/lib/password";
 import type { Role } from "@/lib/roles";
 import { passwordSchema } from "@/lib/validators/auth";
 import { Area, type City } from "@/models/Area";
 import { Block } from "@/models/Block";
+import { Household } from "@/models/Household";
 import { Settings } from "@/models/Settings";
 import { Street } from "@/models/Street";
 import { User } from "@/models/User";
@@ -260,6 +262,112 @@ async function seedBlocksAndStreets(areaIds: Map<string, Types.ObjectId>) {
   console.log(`  ${blocks} blocks and ${streets} streets ready`);
 }
 
+// --- Households --------------------------------------------------------------
+
+/** Small seeded random generator, so every run creates the same households. */
+function randomFor(seed: string): () => number {
+  let state = 0;
+  for (const char of seed) state = (Math.imul(state, 31) + char.charCodeAt(0)) | 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const MALE = ["Muhammad", "Ahmed", "Ali", "Hassan", "Usman", "Bilal", "Imran", "Khalid", "Tariq", "Asif", "Zahid", "Shahid", "Nadeem", "Waqar", "Faisal", "Kamran", "Rizwan", "Saleem", "Javed", "Arshad", "Adnan", "Haris", "Omer", "Zubair", "Sohail"];
+const FEMALE = ["Ayesha", "Fatima", "Sadia", "Nasreen", "Rubina", "Shazia", "Samina", "Farzana", "Uzma", "Saima", "Hina", "Nadia"];
+const SURNAMES = ["Khan", "Malik", "Qureshi", "Butt", "Chaudhry", "Raja", "Abbasi", "Awan", "Sheikh", "Mirza", "Siddiqui", "Hashmi", "Gillani", "Janjua", "Satti", "Kiyani", "Bhatti", "Rana", "Mughal", "Ansari"];
+const MOBILE_PREFIXES = ["0300", "0301", "0302", "0303", "0305", "0306", "0307", "0308", "0311", "0312", "0313", "0315", "0320", "0321", "0322", "0323", "0331", "0332", "0333", "0334", "0336", "0341", "0342", "0343", "0345", "0346"];
+
+async function seedHouseholds() {
+  const streets = await Street.find({}).select("areaId blockId name").lean();
+  const areaDocs = await Area.find({}).select("name defaultMonthlyFee").lean();
+  const areas = new Map(areaDocs.map((a) => [a._id.toString(), a]));
+  const blockNames = new Map((await Block.find({}).select("name").lean()).map((b) => [b._id.toString(), b.name]));
+  let total = 0;
+
+  for (const street of streets) {
+    const area = areas.get(street.areaId.toString());
+    // Seeded by names, so every database gets the same demo houses.
+    const random = randomFor(`${area?.name}:${blockNames.get(street.blockId.toString())}:${street.name}`);
+    const pick = <T,>(items: T[]): T => items[Math.floor(random() * items.length)] as T;
+    const person = () => `${random() < 0.8 ? pick(MALE) : pick(FEMALE)} ${pick(SURNAMES)}`;
+    const defaultFee = area?.defaultMonthlyFee ?? 150;
+    const count = 15 + Math.floor(random() * 16);
+
+    const operations = Array.from({ length: count }, (_, index) => {
+      const houseNumber = `${index + 1}${random() < 0.1 ? "-A" : ""}`;
+      const roll = random();
+      const isMosque = street.name === "Masjid Wali Gali" && index === 0;
+      const status: HouseholdStatus = isMosque ? "exempt" : roll < 0.06 ? "vacant" : roll < 0.09 ? "exempt" : "active";
+      const tenant = !isMosque && status !== "vacant" && random() < 0.25;
+      const occupantType: OccupantType = tenant ? "tenant" : "owner";
+      const ownerName = isMosque ? "Jamia Masjid Committee" : person();
+      const mobile =
+        status === "vacant" || random() < 0.15
+          ? undefined
+          : `${pick(MOBILE_PREFIXES)}${String(Math.floor(random() * 1e7)).padStart(7, "0")}`;
+      const customFee = random() < 0.12 ? pick([100, 200, 250, 300].filter((fee) => fee !== defaultFee)) : defaultFee;
+
+      return {
+        updateOne: {
+          filter: { streetId: street._id, houseNumber },
+          update: {
+            $setOnInsert: {
+              areaId: street.areaId,
+              blockId: street.blockId,
+              streetId: street._id,
+              houseNumber,
+              ownerName,
+              occupantType,
+              ...(tenant ? { contactName: person() } : {}),
+              ...(mobile ? { mobile } : {}),
+              ...(!isMosque && random() < 0.1
+                ? { email: `${ownerName.split(" ")[0]?.toLowerCase()}.${ownerName.split(" ")[1]?.toLowerCase()}@gmail.com` }
+                : {}),
+              monthlyFee: isMosque ? 0 : customFee,
+              status,
+              ...(isMosque ? { notes: "Mosque, exempt from fee" } : {}),
+            },
+          },
+          upsert: true,
+        },
+      };
+    });
+
+    await Household.bulkWrite(operations, { ordered: false });
+    total += count;
+  }
+  console.log(`  ${total} households ready on ${streets.length} streets`);
+}
+
+/** Give two demo residents a house (only the first time). */
+async function linkDemoResidents() {
+  const links = [
+    { mobile: "03225550109", area: "Satellite Town", block: "Block A", street: "Street 1" },
+    { mobile: "03235550110", area: "G-11", block: "G-11/2", street: "Street 20" },
+  ];
+  for (const link of links) {
+    const user = await User.findOne({ mobile: link.mobile, role: "resident" });
+    if (!user || user.householdId) continue;
+    const area = await Area.findOne({ name: link.area }).select("_id").lean();
+    const block = area ? await Block.findOne({ areaId: area._id, name: link.block }).select("_id").lean() : null;
+    const street = block ? await Street.findOne({ blockId: block._id, name: link.street }).select("_id").lean() : null;
+    const house = street ? await Household.findOne({ streetId: street._id, houseNumber: "1" }) : null;
+    if (!house) continue;
+    house.mobile = user.mobile;
+    house.contactName = house.ownerName === user.name ? undefined : user.name;
+    house.status = "active";
+    await house.save();
+    user.householdId = house._id;
+    user.areaIds = [house.areaId];
+    await user.save();
+    console.log(`  ${user.name} linked to house 1, ${link.street}, ${link.area}`);
+  }
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -270,6 +378,8 @@ async function main() {
   await seedDemoUsers(areaIds);
   await syncAllTeams();
   await seedBlocksAndStreets(areaIds);
+  await seedHouseholds();
+  await linkDemoResidents();
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
