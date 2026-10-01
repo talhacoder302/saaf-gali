@@ -33,6 +33,20 @@ export function formatMobile(mobile: string): string {
   return /^03\d{9}$/.test(mobile) ? `${mobile.slice(0, 4)}-${mobile.slice(4)}` : mobile;
 }
 
+/** Like mobileSchema, but an empty value is allowed and becomes null. */
+export const optionalMobileSchema = z
+  .string()
+  .trim()
+  .transform((value, ctx) => {
+    if (value === "") return null;
+    const mobile = normalizeMobile(value);
+    if (!mobile) {
+      ctx.addIssue({ code: "custom", message: "invalidMobile" });
+      return z.NEVER;
+    }
+    return mobile;
+  });
+
 /** Zod field that accepts any supported format and outputs 03XXXXXXXXX. */
 export const mobileSchema = z
   .string()

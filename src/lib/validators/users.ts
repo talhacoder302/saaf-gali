@@ -9,7 +9,8 @@ import { passwordSchema } from "@/lib/validators/auth";
 
 export const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, "invalid");
 
-const emailSchema = z
+/** Optional email: "" is allowed and means "none". */
+export const emailSchema = z
   .string()
   .trim()
   .toLowerCase()
