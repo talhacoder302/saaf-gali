@@ -1,4 +1,4 @@
-import { Camera, MessageSquareWarning, Users } from "lucide-react";
+import { Banknote, Camera, MessageSquareWarning, Users } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
@@ -24,7 +24,8 @@ export default async function SupervisorHomePage() {
         <p className="text-muted-foreground">{t("intro")}</p>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <ActionTile icon={Users} label={t("actions.team")} soonLabel={soon} primary />
+        <ActionTile icon={Banknote} label={t("actions.collect")} soonLabel={soon} href="/supervisor/collect" primary />
+        <ActionTile icon={Users} label={t("actions.team")} soonLabel={soon} />
         <ActionTile icon={Camera} label={t("actions.review")} soonLabel={soon} />
         <ActionTile icon={MessageSquareWarning} label={t("actions.complaints")} soonLabel={soon} />
       </div>
