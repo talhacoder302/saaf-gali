@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { EmptyState } from "@/components/shared/empty-state";
+import { FeeHistoryView } from "@/components/shared/fees/fee-history";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,13 +18,16 @@ import { HouseholdFormDialog } from "./household-form-dialog";
 import { STATUS_BADGE } from "./households-view";
 import { ResidentLoginDialog } from "./resident-login-dialog";
 import type { AreaNode, HouseholdDetail } from "./types";
+import type { FeeHistory } from "@/server/payments";
 
 type HouseholdDetailViewProps = {
   household: HouseholdDetail;
   tree: AreaNode[];
+  feeHistory: FeeHistory;
+  canCancelPayments: boolean;
 };
 
-export function HouseholdDetailView({ household, tree }: HouseholdDetailViewProps) {
+export function HouseholdDetailView({ household, tree, feeHistory, canCancelPayments }: HouseholdDetailViewProps) {
   const t = useTranslations("households");
   const tUsers = useTranslations("users");
   const format = useFormatter();
@@ -87,6 +91,12 @@ export function HouseholdDetailView({ household, tree }: HouseholdDetailViewProp
         </div>
         {readOnly ? null : (
           <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href={`/admin/fees/collect?household=${household.id}`}>
+                <Banknote aria-hidden />
+                {t("collectPayment")}
+              </Link>
+            </Button>
             {canCreateResident ? (
               <Button variant="outline" onClick={() => setDialog("resident")}>
                 <KeyRound aria-hidden />
@@ -158,13 +168,17 @@ export function HouseholdDetailView({ household, tree }: HouseholdDetailViewProp
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("feeHistory.title")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <EmptyState icon={Banknote} title={t("feeHistory.emptyTitle")} description={t("feeHistory.emptyBody")} />
+            {feeHistory.bills.length === 0 && feeHistory.payments.length === 0 ? (
+              <EmptyState icon={Banknote} title={t("feeHistory.emptyTitle")} description={t("feeHistory.emptyBody")} />
+            ) : (
+              <FeeHistoryView history={feeHistory} canCancel={canCancelPayments} />
+            )}
           </CardContent>
         </Card>
         <Card>

@@ -6,6 +6,7 @@ import { HouseholdDetailView } from "@/components/admin/households/household-det
 import { ADMIN_ROLES } from "@/lib/roles";
 import { getHousehold } from "@/server/households";
 import { getLocationTree } from "@/server/locations";
+import { getHouseholdFeeHistory } from "@/server/payments";
 import { requirePageUser } from "@/server/session";
 
 type HouseholdPageProps = {
@@ -22,12 +23,23 @@ export async function generateMetadata({ params }: HouseholdPageProps): Promise<
 }
 
 export default async function HouseholdPage({ params }: HouseholdPageProps) {
-  await requirePageUser(ADMIN_ROLES);
+  const user = await requirePageUser(ADMIN_ROLES);
   const { householdId } = await params;
 
   // Out-of-scope households come back as null, so they 404 like missing ones.
-  const [household, tree] = await Promise.all([getHousehold(householdId), getLocationTree()]);
-  if (!household) notFound();
+  const [household, tree, feeHistory] = await Promise.all([
+    getHousehold(householdId),
+    getLocationTree(),
+    getHouseholdFeeHistory(householdId),
+  ]);
+  if (!household || !feeHistory) notFound();
 
-  return <HouseholdDetailView household={household} tree={tree} />;
+  return (
+    <HouseholdDetailView
+      household={household}
+      tree={tree}
+      feeHistory={feeHistory}
+      canCancelPayments={user.role === "super_admin"}
+    />
+  );
 }

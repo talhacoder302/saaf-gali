@@ -57,7 +57,8 @@
     "myBills": "My bills",
     "hisaab": "Hisaab",
     "team": "Team",
-    "review": "Review"
+    "review": "Review",
+    "collect": "Collect fee"
   },
   "landing": {
     "badge": "Rawalpindi & Islamabad",
@@ -208,7 +209,21 @@
     "import_unreadable": "This file could not be read. Save it as .xlsx and try again.",
     "import_empty": "The file has no rows to import.",
     "import_too_many_rows": "Import at most 5,000 rows at a time.",
-    "import_nothing_valid": "None of the rows can be imported."
+    "import_nothing_valid": "None of the rows can be imported.",
+    "invalidMonth": "Choose a valid month.",
+    "monthOutOfRange": "Bills can be made from a year back up to next month.",
+    "amountInvalid": "Enter an amount above zero.",
+    "amountWholeRupees": "Enter the amount in whole rupees.",
+    "amountTooLarge": "This amount is too large.",
+    "chooseMonths": "Choose at least one month.",
+    "reasonTooShort": "Write a short reason (at least 5 characters).",
+    "reasonTooLong": "The reason is too long.",
+    "no_areas": "You have no active areas.",
+    "invalid_amount": "Enter an amount above zero.",
+    "advance_not_allowed": "This house is vacant or exempt, so it can't pay for future months. Only unpaid bills can be paid.",
+    "too_many_advance_months": "That pays more than 24 months ahead. Enter a smaller amount.",
+    "payment_conflict": "Someone else just updated this house's bills. Please try again.",
+    "payment_already_cancelled": "This payment is already cancelled."
   },
   "users": {
     "title": "Users",
@@ -314,7 +329,8 @@
     "actions": {
       "team": "My team",
       "review": "Review work",
-      "complaints": "Complaints"
+      "complaints": "Complaints",
+      "collect": "Collect fee"
     }
   },
   "worker": {
@@ -335,6 +351,18 @@
       "newComplaint": "File a complaint",
       "hisaab": "Area hisaab",
       "profile": "My profile"
+    },
+    "fees": {
+      "house": "House {number}, {street}, {area}",
+      "dueNow": "You owe",
+      "howToPay": "Please pay your supervisor or the area office.",
+      "allPaid": "All paid. Thank you!",
+      "monthlyFee": "Monthly fee: {fee}",
+      "billsTitle": "My bills",
+      "receiptsTitle": "My receipts",
+      "seeAll": "See all",
+      "notLinkedTitle": "Your house is not linked yet",
+      "notLinkedBody": "Ask your area office to link your login to your house to see bills here."
     }
   },
   "location": {
@@ -671,6 +699,155 @@
       "title": "Complaints",
       "emptyTitle": "No complaints",
       "emptyBody": "Complaints from this house will show here."
+    },
+    "collectPayment": "Collect payment"
+  },
+  "collect": {
+    "title": "Collect fee",
+    "intro": "Find the house, pick the months and save. A receipt is made straight away.",
+    "searchPlaceholder": "House number, street or mobile",
+    "searchHint": "Type a house number (12), a street (Street 5), both (12 Street 5) or a mobile number.",
+    "noResults": "No house found",
+    "noResultsHint": "Check the number or try the street name.",
+    "house": "House {number}",
+    "nothingDue": "Nothing due",
+    "back": "Find another house",
+    "monthlyFee": "Monthly fee",
+    "dueNow": "Due now",
+    "notActive": "This house is vacant or exempt: you can only collect its unpaid bills.",
+    "howMuch": "How much",
+    "mode": {
+      "months": "Choose months",
+      "amount": "Type amount"
+    },
+    "nothingToSelect": "This house has no unpaid months.",
+    "advance": "Advance",
+    "partlyPaid": "{paid} already paid",
+    "overdue": "Overdue",
+    "amount": "Amount received",
+    "amountHint": "Oldest unpaid month is paid first. Anything extra goes to the next months in advance.",
+    "amountHintNoAdvance": "Oldest unpaid month is paid first.",
+    "method": "Paid by",
+    "note": "Note",
+    "notePlaceholder": "Optional, e.g. bank reference",
+    "total": "Total",
+    "saving": "Saving...",
+    "save": "Save payment",
+    "saved": "Payment saved. Receipt {receipt}",
+    "successTitle": "{amount} received",
+    "successBody": "House {number}, {name}",
+    "sendWhatsapp": "Send receipt on WhatsApp",
+    "viewReceipt": "Open receipt",
+    "collectAnother": "Collect from another house"
+  },
+  "fees": {
+    "title": "Fees",
+    "intro": "Monthly bills, collection and who still owes.",
+    "collect": "Collect payment",
+    "month": "Month",
+    "area": "Area",
+    "allAreas": "All areas",
+    "unbilled": "{count, plural, one {# household has} other {# households have}} no bill for {month} yet.",
+    "noBillsTitle": "No bills for {month}",
+    "noBillsBody": "Generate this month's bills to start collecting.",
+    "filterPlaceholder": "Filter by house, name or street",
+    "reminder": "Reminder",
+    "houseLabel": "House {number}",
+    "monthsCount": "{count, plural, one {# month} other {# months}}",
+    "partPaid": "({paid} paid)",
+    "stats": {
+      "billed": "Billed",
+      "bills": "{count, plural, one {# bill} other {# bills}}",
+      "collected": "Collected",
+      "pending": "Pending",
+      "percent": "Collected %"
+    },
+    "tabs": {
+      "pending": "Pending ({count})",
+      "paid": "Paid ({count})",
+      "defaulters": "Defaulters ({count})"
+    },
+    "empty": {
+      "pending": "Nobody is pending for this month.",
+      "paid": "No bills are fully paid yet.",
+      "defaulters": "No household owes for 2 or more months."
+    },
+    "columns": {
+      "house": "House",
+      "bill": "Bill",
+      "monthsDue": "Months due",
+      "paid": "Paid",
+      "due": "Due",
+      "reminder": "Reminder"
+    },
+    "methods": {
+      "cash": "Cash",
+      "bank": "Bank",
+      "jazzcash": "JazzCash",
+      "easypaisa": "Easypaisa"
+    },
+    "billStatus": {
+      "unpaid": "Unpaid",
+      "partial": "Part paid",
+      "paid": "Paid",
+      "exempt": "Exempt"
+    },
+    "generate": {
+      "open": "Generate bills",
+      "title": "Generate monthly bills",
+      "description": "Creates one bill for every active household for the month you choose.",
+      "month": "Month",
+      "area": "Area",
+      "allAreas": "All my areas",
+      "safeNote": "Safe to press again: houses that already have a bill for this month are skipped. Vacant and exempt houses are not billed.",
+      "button": "Generate",
+      "working": "Generating...",
+      "done": "{count, plural, =0 {No new bills} one {# bill created} other {# bills created}}",
+      "summaryTitle": "Bills for {month}",
+      "created": "New bills created",
+      "alreadyBilled": "Already had a bill",
+      "notBillable": "Vacant, exempt or no fee (skipped)"
+    }
+  },
+  "receipt": {
+    "title": "Fee receipt",
+    "cancelled": "This payment was cancelled.",
+    "receivedFrom": "Received from",
+    "house": "House",
+    "mobile": "Mobile",
+    "method": "Paid by",
+    "receivedBy": "Received by",
+    "note": "Note",
+    "month": "Month",
+    "amount": "Amount",
+    "total": "Total",
+    "paidStamp": "PAID",
+    "sendWhatsapp": "Send on WhatsApp",
+    "downloadPdf": "Download PDF",
+    "print": "Print"
+  },
+  "feeHistory": {
+    "dueNow": "Due now:",
+    "billsTitle": "Bills",
+    "paymentsTitle": "Payments",
+    "noBills": "No bills yet.",
+    "noPayments": "No payments yet.",
+    "month": "Month",
+    "amount": "Bill",
+    "paid": "Paid",
+    "status": "Status",
+    "advance": "Advance",
+    "cancelled": "Cancelled",
+    "cancelReason": "Reason: {reason}",
+    "receipt": "Receipt",
+    "cancel": "Cancel",
+    "cancelDialog": {
+      "title": "Cancel payment {receipt}?",
+      "description": "{amount} will be taken back off the bills it paid. The payment stays in the records marked as cancelled.",
+      "reason": "Reason",
+      "reasonPlaceholder": "e.g. Entered twice by mistake",
+      "confirm": "Cancel payment",
+      "done": "Payment cancelled"
     }
   }
 }

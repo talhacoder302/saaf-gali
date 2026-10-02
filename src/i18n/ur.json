@@ -57,7 +57,8 @@
     "myBills": "میرے بل",
     "hisaab": "حساب",
     "team": "ٹیم",
-    "review": "جانچ"
+    "review": "جانچ",
+    "collect": "فیس وصولی"
   },
   "landing": {
     "badge": "راولپنڈی اور اسلام آباد",
@@ -208,7 +209,21 @@
     "import_unreadable": "یہ فائل پڑھی نہیں جا سکی۔ اسے .xlsx میں محفوظ کر کے دوبارہ کوشش کریں۔",
     "import_empty": "فائل میں درج کرنے کے لیے کوئی قطار نہیں۔",
     "import_too_many_rows": "ایک وقت میں زیادہ سے زیادہ 5,000 قطاریں درج کریں۔",
-    "import_nothing_valid": "کوئی بھی قطار درج نہیں ہو سکتی۔"
+    "import_nothing_valid": "کوئی بھی قطار درج نہیں ہو سکتی۔",
+    "invalidMonth": "درست مہینہ منتخب کریں۔",
+    "monthOutOfRange": "بل ایک سال پہلے سے اگلے مہینے تک کے بنائے جا سکتے ہیں۔",
+    "amountInvalid": "صفر سے زیادہ رقم لکھیں۔",
+    "amountWholeRupees": "رقم پورے روپوں میں لکھیں۔",
+    "amountTooLarge": "یہ رقم بہت زیادہ ہے۔",
+    "chooseMonths": "کم از کم ایک مہینہ منتخب کریں۔",
+    "reasonTooShort": "مختصر وجہ لکھیں (کم از کم 5 حروف)۔",
+    "reasonTooLong": "وجہ بہت لمبی ہے۔",
+    "no_areas": "آپ کا کوئی فعال علاقہ نہیں۔",
+    "invalid_amount": "صفر سے زیادہ رقم لکھیں۔",
+    "advance_not_allowed": "یہ گھر خالی یا مستثنیٰ ہے، اس لیے آنے والے مہینوں کی فیس نہیں لی جا سکتی۔ صرف باقی بل ادا ہو سکتے ہیں۔",
+    "too_many_advance_months": "یہ رقم 24 مہینوں سے زیادہ کی پیشگی بنتی ہے۔ کم رقم لکھیں۔",
+    "payment_conflict": "کسی اور نے ابھی اس گھر کے بل بدلے ہیں۔ براہِ کرم دوبارہ کوشش کریں۔",
+    "payment_already_cancelled": "یہ ادائیگی پہلے ہی منسوخ ہو چکی ہے۔"
   },
   "users": {
     "title": "صارفین",
@@ -314,7 +329,8 @@
     "actions": {
       "team": "میری ٹیم",
       "review": "کام کی جانچ",
-      "complaints": "شکایات"
+      "complaints": "شکایات",
+      "collect": "فیس وصول کریں"
     }
   },
   "worker": {
@@ -335,6 +351,18 @@
       "newComplaint": "شکایت درج کریں",
       "hisaab": "علاقے کا حساب",
       "profile": "میری پروفائل"
+    },
+    "fees": {
+      "house": "مکان {number}، {street}، {area}",
+      "dueNow": "آپ کے ذمے",
+      "howToPay": "براہِ کرم اپنے سپروائزر یا ایریا آفس کو ادا کریں۔",
+      "allPaid": "سب ادا ہے۔ شکریہ!",
+      "monthlyFee": "ماہانہ فیس: {fee}",
+      "billsTitle": "میرے بل",
+      "receiptsTitle": "میری رسیدیں",
+      "seeAll": "سب دیکھیں",
+      "notLinkedTitle": "آپ کا گھر ابھی منسلک نہیں",
+      "notLinkedBody": "بل یہاں دیکھنے کے لیے ایریا آفس سے کہیں کہ آپ کا لاگ اِن آپ کے گھر سے منسلک کر دیں۔"
     }
   },
   "location": {
@@ -671,6 +699,155 @@
       "title": "شکایات",
       "emptyTitle": "کوئی شکایت نہیں",
       "emptyBody": "اس گھر کی شکایات یہاں نظر آئیں گی۔"
+    },
+    "collectPayment": "فیس وصول کریں"
+  },
+  "collect": {
+    "title": "فیس وصولی",
+    "intro": "گھر تلاش کریں، مہینے چنیں اور محفوظ کریں۔ رسید فوراً بن جائے گی۔",
+    "searchPlaceholder": "مکان نمبر، گلی یا موبائل",
+    "searchHint": "مکان نمبر (12)، گلی (Street 5)، دونوں (12 Street 5) یا موبائل نمبر لکھیں۔",
+    "noResults": "کوئی گھر نہیں ملا",
+    "noResultsHint": "نمبر دیکھیں یا گلی کا نام لکھیں۔",
+    "house": "مکان {number}",
+    "nothingDue": "کچھ باقی نہیں",
+    "back": "دوسرا گھر تلاش کریں",
+    "monthlyFee": "ماہانہ فیس",
+    "dueNow": "ابھی واجب",
+    "notActive": "یہ گھر خالی یا مستثنیٰ ہے: صرف اس کے باقی بل وصول ہو سکتے ہیں۔",
+    "howMuch": "کتنی رقم",
+    "mode": {
+      "months": "مہینے چنیں",
+      "amount": "رقم لکھیں"
+    },
+    "nothingToSelect": "اس گھر کا کوئی مہینہ باقی نہیں۔",
+    "advance": "پیشگی",
+    "partlyPaid": "{paid} پہلے ادا",
+    "overdue": "تاخیر",
+    "amount": "وصول شدہ رقم",
+    "amountHint": "سب سے پرانا باقی مہینہ پہلے ادا ہو گا۔ زائد رقم اگلے مہینوں میں پیشگی جمع ہو گی۔",
+    "amountHintNoAdvance": "سب سے پرانا باقی مہینہ پہلے ادا ہو گا۔",
+    "method": "ادائیگی کا طریقہ",
+    "note": "نوٹ",
+    "notePlaceholder": "اختیاری، مثلاً بینک ریفرنس",
+    "total": "کل",
+    "saving": "محفوظ ہو رہا ہے...",
+    "save": "ادائیگی محفوظ کریں",
+    "saved": "ادائیگی محفوظ ہو گئی۔ رسید {receipt}",
+    "successTitle": "{amount} وصول ہو گئے",
+    "successBody": "مکان {number}، {name}",
+    "sendWhatsapp": "رسید واٹس ایپ پر بھیجیں",
+    "viewReceipt": "رسید کھولیں",
+    "collectAnother": "دوسرے گھر سے وصول کریں"
+  },
+  "fees": {
+    "title": "فیس",
+    "intro": "ماہانہ بل، وصولی اور کس کی رقم باقی ہے۔",
+    "collect": "فیس وصول کریں",
+    "month": "مہینہ",
+    "area": "علاقہ",
+    "allAreas": "تمام علاقے",
+    "unbilled": "{count, plural, one {# گھر کا} other {# گھروں کا}} {month} کا بل ابھی نہیں بنا۔",
+    "noBillsTitle": "{month} کے کوئی بل نہیں",
+    "noBillsBody": "وصولی شروع کرنے کے لیے اس مہینے کے بل بنائیں۔",
+    "filterPlaceholder": "مکان، نام یا گلی سے چھانٹیں",
+    "reminder": "یاد دہانی",
+    "houseLabel": "مکان {number}",
+    "monthsCount": "{count, plural, one {# مہینہ} other {# مہینے}}",
+    "partPaid": "({paid} ادا)",
+    "stats": {
+      "billed": "کل بل",
+      "bills": "{count, plural, one {# بل} other {# بل}}",
+      "collected": "وصول",
+      "pending": "باقی",
+      "percent": "وصولی %"
+    },
+    "tabs": {
+      "pending": "باقی ({count})",
+      "paid": "ادا ({count})",
+      "defaulters": "نادہندگان ({count})"
+    },
+    "empty": {
+      "pending": "اس مہینے کسی کی رقم باقی نہیں۔",
+      "paid": "ابھی کوئی بل پورا ادا نہیں ہوا۔",
+      "defaulters": "کسی گھر کی 2 یا زیادہ مہینوں کی فیس باقی نہیں۔"
+    },
+    "columns": {
+      "house": "مکان",
+      "bill": "بل",
+      "monthsDue": "باقی مہینے",
+      "paid": "ادا",
+      "due": "باقی",
+      "reminder": "یاد دہانی"
+    },
+    "methods": {
+      "cash": "نقد",
+      "bank": "بینک",
+      "jazzcash": "جاز کیش",
+      "easypaisa": "ایزی پیسہ"
+    },
+    "billStatus": {
+      "unpaid": "باقی",
+      "partial": "جزوی ادا",
+      "paid": "ادا",
+      "exempt": "مستثنیٰ"
+    },
+    "generate": {
+      "open": "بل بنائیں",
+      "title": "ماہانہ بل بنائیں",
+      "description": "منتخب مہینے کے لیے ہر فعال گھر کا ایک بل بنتا ہے۔",
+      "month": "مہینہ",
+      "area": "علاقہ",
+      "allAreas": "میرے تمام علاقے",
+      "safeNote": "دوبارہ دبانا محفوظ ہے: جن گھروں کا اس مہینے کا بل بن چکا ہے وہ چھوڑ دیے جاتے ہیں۔ خالی اور مستثنیٰ گھروں کا بل نہیں بنتا۔",
+      "button": "بل بنائیں",
+      "working": "بل بن رہے ہیں...",
+      "done": "{count, plural, =0 {کوئی نیا بل نہیں} one {# بل بن گیا} other {# بل بن گئے}}",
+      "summaryTitle": "{month} کے بل",
+      "created": "نئے بل بنے",
+      "alreadyBilled": "پہلے سے بل موجود تھا",
+      "notBillable": "خالی، مستثنیٰ یا بغیر فیس (چھوڑ دیے)"
+    }
+  },
+  "receipt": {
+    "title": "فیس کی رسید",
+    "cancelled": "یہ ادائیگی منسوخ کر دی گئی۔",
+    "receivedFrom": "وصول کنندہ از",
+    "house": "مکان",
+    "mobile": "موبائل",
+    "method": "ادائیگی کا طریقہ",
+    "receivedBy": "وصول کرنے والا",
+    "note": "نوٹ",
+    "month": "مہینہ",
+    "amount": "رقم",
+    "total": "کل",
+    "paidStamp": "ادا شدہ",
+    "sendWhatsapp": "واٹس ایپ پر بھیجیں",
+    "downloadPdf": "پی ڈی ایف ڈاؤن لوڈ کریں",
+    "print": "پرنٹ"
+  },
+  "feeHistory": {
+    "dueNow": "ابھی واجب:",
+    "billsTitle": "بل",
+    "paymentsTitle": "ادائیگیاں",
+    "noBills": "ابھی کوئی بل نہیں۔",
+    "noPayments": "ابھی کوئی ادائیگی نہیں۔",
+    "month": "مہینہ",
+    "amount": "بل",
+    "paid": "ادا",
+    "status": "حالت",
+    "advance": "پیشگی",
+    "cancelled": "منسوخ",
+    "cancelReason": "وجہ: {reason}",
+    "receipt": "رسید",
+    "cancel": "منسوخ کریں",
+    "cancelDialog": {
+      "title": "ادائیگی {receipt} منسوخ کریں؟",
+      "description": "{amount} ان بلوں سے واپس لے لیے جائیں گے جن میں جمع ہوئے تھے۔ ادائیگی ریکارڈ میں منسوخ کے طور پر رہے گی۔",
+      "reason": "وجہ",
+      "reasonPlaceholder": "مثلاً غلطی سے دو بار درج ہوئی",
+      "confirm": "ادائیگی منسوخ کریں",
+      "done": "ادائیگی منسوخ ہو گئی"
     }
   }
 }

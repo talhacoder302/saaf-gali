@@ -9,7 +9,7 @@ export const RESIDENT_ROOT = "/resident";
 
 const items: NavItem[] = [
   { key: "home", icon: House, href: RESIDENT_ROOT },
-  { key: "myBills", icon: ReceiptText },
+  { key: "myBills", icon: ReceiptText, href: `${RESIDENT_ROOT}/bills` },
   { key: "complaints", icon: MessageSquareWarning },
   { key: "profile", icon: UserRound, href: `${RESIDENT_ROOT}/profile` },
 ];
