@@ -13,6 +13,19 @@ export function monthKey(date: Date | number = Date.now()): string {
   return format(toKarachi(date), "yyyy-MM");
 }
 
+/** A calendar day as "YYYY-MM-DD". */
+export const DAY_REGEX = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Day key in Pakistan time, e.g. "2026-09-29" (used by date inputs). */
+export function dayKey(date: Date | number = Date.now()): string {
+  return format(toKarachi(date), "yyyy-MM-dd");
+}
+
+/** Midnight in Pakistan at the start of a "YYYY-MM-DD" day. Pakistan has no DST. */
+export function karachiDayStart(day: string): Date {
+  return new Date(`${day}T00:00:00+05:00`);
+}
+
 /** Format a date in Pakistan time, e.g. "29 Sep 2026". */
 export function formatDate(date: Date | number, pattern = "d MMM yyyy"): string {
   return format(toKarachi(date), pattern);

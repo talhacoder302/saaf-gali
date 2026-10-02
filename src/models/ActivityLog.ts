@@ -5,6 +5,7 @@ export const ACTIVITY_ACTIONS = [
   "update",
   "delete",
   "approve",
+  "reject",
   "payment",
   "enable",
   "disable",
