@@ -27,6 +27,7 @@ import { namesFor } from "@/server/billing";
 import { ServiceError } from "@/server/errors";
 import { cancelPaymentCore, recordPaymentCore } from "@/server/payments-core";
 import { loadSettings } from "@/server/settings";
+import { photoUrl } from "@/server/storage";
 
 /** Who can take payments: admins and supervisors (in their own areas). */
 export const COLLECTOR_ROLES = [...ADMIN_ROLES, "supervisor"] as const satisfies readonly Role[];
@@ -280,6 +281,7 @@ export async function cancelPayment(input: CancelPaymentInput): Promise<void> {
 
 export type ReceiptView = {
   organisationName: string;
+  logoUrl: string | null;
   receiptNumber: string;
   publicToken: string;
   amount: number;
@@ -303,9 +305,10 @@ async function toReceiptView(paymentId: Types.ObjectId): Promise<ReceiptView | n
     loadSettings(),
   ]);
   if (!household) return null;
-  const names = await namesFor([household]);
+  const [names, logoUrl] = await Promise.all([namesFor([household]), photoUrl(settings.logoKey)]);
   return {
     organisationName: settings.organisationName,
+    logoUrl,
     receiptNumber: payment.receiptNumber,
     publicToken: payment.publicToken,
     amount: payment.amount,

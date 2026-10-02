@@ -1,4 +1,5 @@
 import { getFormatter, getTranslations } from "next-intl/server";
+import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
 import { formatRupees } from "@/lib/format";
@@ -26,9 +27,16 @@ export async function ReceiptCard({ receipt }: { receipt: ReceiptView }) {
       ) : null}
 
       <div className="flex items-start justify-between gap-4 border-b pb-4">
-        <div>
-          <p className="text-lg font-semibold">{receipt.organisationName}</p>
-          <p className="text-sm text-muted-foreground">{t("title")}</p>
+        <div className="flex items-center gap-3">
+          {receipt.logoUrl ? (
+            <span className="relative size-12 shrink-0 overflow-hidden rounded-lg">
+              <Image src={receipt.logoUrl} alt="" fill unoptimized sizes="48px" className="object-contain" />
+            </span>
+          ) : null}
+          <div>
+            <p className="text-lg font-semibold">{receipt.organisationName}</p>
+            <p className="text-sm text-muted-foreground">{t("title")}</p>
+          </div>
         </div>
         <div className="text-end">
           <p dir="ltr" className="font-mono text-sm font-semibold">
