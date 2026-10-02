@@ -4,6 +4,6 @@ import { requirePageUser } from "@/server/session";
 
 export default async function ResidentLayout({ children }: { children: React.ReactNode }) {
   // The proxy already routes by role; this re-checks against the database.
-  await requirePageUser(SECTION_ROLES["/resident"]);
-  return <ResidentShell>{children}</ResidentShell>;
+  const user = await requirePageUser(SECTION_ROLES["/resident"]);
+  return <ResidentShell role={user.role}>{children}</ResidentShell>;
 }

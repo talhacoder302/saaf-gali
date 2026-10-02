@@ -1,10 +1,11 @@
-import { MessageSquarePlus, ReceiptText, Scale, UserRound } from "lucide-react";
+import { ClipboardCheck, MessageSquarePlus, ReceiptText, Scale, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 import { MyFeesView } from "@/components/resident/my-fees";
 import { ActionTile } from "@/components/shared/action-tile";
 import { SECTION_ROLES } from "@/lib/roles";
+import { countPendingApprovals } from "@/server/expenses";
 import { getMyFees } from "@/server/payments";
 import { requirePageUser } from "@/server/session";
 
@@ -15,7 +16,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ResidentHomePage() {
   const user = await requirePageUser(SECTION_ROLES["/resident"]);
-  const [t, tCommon, fees] = await Promise.all([getTranslations("resident"), getTranslations("common"), getMyFees()]);
+  const [t, tCommon, fees, pendingApprovals] = await Promise.all([
+    getTranslations("resident"),
+    getTranslations("common"),
+    getMyFees(),
+    user.role === "committee" ? countPendingApprovals() : Promise.resolve(null),
+  ]);
   const soon = tCommon("soon");
 
   return (
@@ -28,6 +34,15 @@ export default async function ResidentHomePage() {
       <MyFeesView fees={fees} compact />
 
       <div className="grid grid-cols-2 gap-3">
+        {pendingApprovals !== null ? (
+          <ActionTile
+            icon={ClipboardCheck}
+            label={t("actions.approvals", { count: pendingApprovals })}
+            soonLabel={soon}
+            href="/resident/approvals"
+            primary={pendingApprovals > 0}
+          />
+        ) : null}
         <ActionTile icon={ReceiptText} label={t("actions.myBills")} soonLabel={soon} href="/resident/bills" />
         <ActionTile icon={MessageSquarePlus} label={t("actions.newComplaint")} soonLabel={soon} />
         <ActionTile icon={Scale} label={t("actions.hisaab")} soonLabel={soon} />
