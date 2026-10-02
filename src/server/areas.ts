@@ -60,6 +60,14 @@ export async function listAreaOptions(): Promise<AreaOption[]> {
   return areas.map((area) => ({ id: area._id.toString(), name: area.name, city: area.city }));
 }
 
+/** Every area in scope, archived ones too, for filters on records that outlive an area. */
+export async function listAreaFilterOptions(): Promise<AreaOption[]> {
+  const actor = await requireUser();
+  await connectDB();
+  const areas = await Area.find(scopeQueryToUserAreas(actor, {}, "_id")).select("name city").sort({ city: 1, name: 1 }).lean();
+  return areas.map((area) => ({ id: area._id.toString(), name: area.name, city: area.city }));
+}
+
 /** Blocks, streets and households per area, in three grouped queries. */
 async function countsByArea(areaIds: Types.ObjectId[]): Promise<Map<string, AreaCounts>> {
   const group = [{ $match: { areaId: { $in: areaIds } } }, { $group: { _id: "$areaId", count: { $sum: 1 } } }];

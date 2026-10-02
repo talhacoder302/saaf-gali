@@ -58,7 +58,8 @@
     "hisaab": "Hisaab",
     "team": "Team",
     "review": "Review",
-    "collect": "Collect fee"
+    "collect": "Collect fee",
+    "approvals": "Approvals"
   },
   "landing": {
     "badge": "Rawalpindi & Islamabad",
@@ -223,7 +224,30 @@
     "advance_not_allowed": "This house is vacant or exempt, so it can't pay for future months. Only unpaid bills can be paid.",
     "too_many_advance_months": "That pays more than 24 months ahead. Enter a smaller amount.",
     "payment_conflict": "Someone else just updated this house's bills. Please try again.",
-    "payment_already_cancelled": "This payment is already cancelled."
+    "payment_already_cancelled": "This payment is already cancelled.",
+    "chooseArea": "Choose an area.",
+    "chooseCategory": "Choose a category.",
+    "descriptionTooShort": "Write a short description.",
+    "invalidDate": "Enter a valid date.",
+    "dateInFuture": "The date cannot be in the future.",
+    "dateTooOld": "The date is more than a year ago.",
+    "rejectNoteRequired": "Write why the expense is rejected.",
+    "receiptPrefixInvalid": "Use 1 to 6 letters or numbers, e.g. SG.",
+    "feeDueDayInvalid": "Choose a day from 1 to 28.",
+    "categoryTooShort": "Category name is too short.",
+    "categoryTooLong": "Category name is too long.",
+    "categoriesRequired": "Keep at least one category.",
+    "tooManyCategories": "You can have up to 20 categories.",
+    "categoryDuplicate": "This category is already in the list.",
+    "photoWrongType": "Choose a photo (JPG, PNG or WebP).",
+    "photoTooLarge": "The photo is too large, even after making it smaller.",
+    "photoInvalid": "This photo cannot be used. Upload it again.",
+    "photoMissing": "The photo did not finish uploading. Upload it again.",
+    "photo_upload_failed": "The photo could not be uploaded. Check your internet and try again.",
+    "storage_not_configured": "Photo upload is not set up yet.",
+    "expenses_not_allowed": "You are not allowed to add expenses.",
+    "expense_already_reviewed": "Someone has already approved or rejected this expense.",
+    "cannot_review_own_expense": "You cannot approve or reject an expense you added."
   },
   "users": {
     "title": "Users",
@@ -330,7 +354,8 @@
       "team": "My team",
       "review": "Review work",
       "complaints": "Complaints",
-      "collect": "Collect fee"
+      "collect": "Collect fee",
+      "expenses": "Expenses"
     }
   },
   "worker": {
@@ -350,7 +375,8 @@
       "myBills": "My bills",
       "newComplaint": "File a complaint",
       "hisaab": "Area hisaab",
-      "profile": "My profile"
+      "profile": "My profile",
+      "approvals": "Approvals ({count})"
     },
     "fees": {
       "house": "House {number}, {street}, {area}",
@@ -858,5 +884,162 @@
       "confirm": "Cancel payment",
       "done": "Payment cancelled"
     }
+  },
+  "photoUpload": {
+    "add": "Add photo",
+    "change": "Change photo",
+    "remove": "Remove photo",
+    "compressing": "Making the photo smaller...",
+    "uploading": "Uploading...",
+    "uploaded": "Photo added",
+    "view": "Open photo",
+    "hint": "Take a photo or choose one. Large photos are made smaller first.",
+    "notConfigured": "Photo upload is not set up yet. You can save without a photo."
+  },
+  "expenses": {
+    "title": "Expenses",
+    "intro": "Record what is spent in each area. Expenses above the approval limit wait for the committee.",
+    "add": "Add expense",
+    "export": "Export to Excel",
+    "total": "{total, plural, one {# expense} other {# expenses}}",
+    "pageOf": "Page {page} of {pageCount}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "filters": {
+      "area": "Area",
+      "allAreas": "All areas",
+      "month": "Month",
+      "allMonths": "All months",
+      "category": "Category",
+      "allCategories": "All categories",
+      "status": "Status",
+      "allStatuses": "All statuses"
+    },
+    "stats": {
+      "spent": "Spent",
+      "spentHint": "Approved and under-limit expenses",
+      "pending": "Waiting approval",
+      "pendingHint": "{count, plural, one {# expense} other {# expenses}}",
+      "rejected": "Rejected",
+      "rejectedHint": "Not counted in totals",
+      "entries": "Entries"
+    },
+    "byCategory": "Spent by category",
+    "columns": {
+      "date": "Date",
+      "details": "Expense",
+      "amount": "Amount",
+      "status": "Status",
+      "addedBy": "Added by",
+      "photo": "Receipt",
+      "actions": "Actions"
+    },
+    "status": {
+      "auto": "Approved (under limit)",
+      "pending": "Waiting approval",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "category": {
+      "supplies": "Supplies",
+      "repair": "Repairs",
+      "fuel": "Fuel",
+      "salary": "Salaries",
+      "transport": "Transport",
+      "misc": "Other"
+    },
+    "reviewedBy": "{name}, {date}",
+    "addedBy": "Added by {name}",
+    "noPhoto": "No photo",
+    "viewPhoto": "Receipt photo",
+    "edit": "Edit",
+    "approve": "Approve",
+    "reject": "Reject",
+    "created": "Expense saved",
+    "createdPending": "Expense saved. It waits for approval because it is above {limit}.",
+    "updated": "Expense updated",
+    "emptyTitle": "No expenses for this month",
+    "emptyBody": "Add the first expense, or choose another month.",
+    "noResults": "No expenses match these filters",
+    "noResultsHint": "Try another month or clear the filters.",
+    "clearFilters": "Clear filters",
+    "needAreasFirst": "Add an area first, then record its expenses.",
+    "form": {
+      "createTitle": "Add expense",
+      "editTitle": "Edit expense",
+      "createDescription": "Write what was bought or paid for, and add a photo of the receipt if you have one.",
+      "editDescription": "Changing the amount, area or category sends the expense through approval again.",
+      "area": "Area",
+      "chooseArea": "Choose area",
+      "category": "Category",
+      "chooseCategory": "Choose category",
+      "description": "What was it for?",
+      "descriptionPlaceholder": "e.g. 12 brooms and 2 bundles of garbage bags",
+      "amount": "Amount",
+      "date": "Date",
+      "photo": "Receipt photo",
+      "limitHint": "Expenses above {limit} need approval.",
+      "needsApproval": "Above {limit}: this expense will wait for approval.",
+      "create": "Save expense"
+    },
+    "review": {
+      "approveTitle": "Approve this expense?",
+      "rejectTitle": "Reject this expense?",
+      "summary": "{description}: {amount}, {area}",
+      "note": "Note",
+      "notePlaceholder": "Optional",
+      "reasonPlaceholder": "Why is it rejected?",
+      "approved": "Expense approved",
+      "rejected": "Expense rejected"
+    },
+    "approvals": {
+      "title": "Approvals",
+      "intro": "Expenses above {limit} count in the hisaab only after you approve them.",
+      "pendingTitle": "Waiting for you",
+      "emptyTitle": "Nothing to approve",
+      "emptyBody": "New expenses above the limit will show up here.",
+      "recentTitle": "Recent decisions",
+      "ownExpense": "You added this one, so someone else must decide."
+    },
+    "mine": {
+      "title": "Expenses",
+      "intro": "Add what you spent on supplies, repairs or transport for your area.",
+      "notAllowedTitle": "Adding expenses is turned off",
+      "notAllowedBody": "Ask your area manager to add the expense for you.",
+      "emptyTitle": "No expenses yet",
+      "emptyBody": "Expenses you add will show here with their approval status.",
+      "recentTitle": "Your expenses"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "intro": "Organisation details, receipts, fees and expense rules.",
+    "saved": "Settings saved",
+    "sections": {
+      "organisation": "Organisation",
+      "organisationHint": "Shown on receipts and the public hisaab.",
+      "fees": "Fees and receipts",
+      "feesHint": "New receipt numbers use the prefix. Old receipts keep their number.",
+      "expenses": "Expenses",
+      "expensesHint": "Who can add expenses and which ones need approval."
+    },
+    "organisationName": "Organisation name",
+    "logo": "Logo",
+    "logoHint": "A square image works best.",
+    "receiptPrefix": "Receipt prefix",
+    "receiptPrefixHint": "New receipts look like {example}.",
+    "feeDueDay": "Fee due day",
+    "feeDueDayHint": "Day of the month fees are due (1 to 28).",
+    "approvalLimit": "Approval limit",
+    "approvalLimitHint": "Expenses above this amount wait for a committee member or super admin. 0 means every expense needs approval.",
+    "supervisorsCanAdd": "Supervisors can add expenses",
+    "supervisorsCanAddHint": "Supervisors add expenses from their phone for their own areas.",
+    "categories": "Expense categories",
+    "categoriesHint": "Shown in the expense form. Removing one does not change expenses already saved.",
+    "newCategory": "New category",
+    "newCategoryPlaceholder": "e.g. Pest control",
+    "addCategory": "Add",
+    "removeCategory": "Remove {name}",
+    "custom": "Custom"
   }
 }

@@ -1,11 +1,11 @@
 import type { NextRequest } from "next/server";
 
-import { buildHouseholdExport } from "@/server/household-excel";
+import { buildExpenseExport } from "@/server/expense-excel";
 
 import { excelResponse } from "../../excel-response";
 
-/** Same filters as the Households page (?areaId=&blockId=&streetId=&status=&q=). */
+/** Same filters as the Expenses page (?areaId=&month=&category=&status=). */
 export async function GET(request: NextRequest) {
   const params = Object.fromEntries(request.nextUrl.searchParams);
-  return excelResponse("households", () => buildHouseholdExport(params));
+  return excelResponse("expenses", () => buildExpenseExport(params));
 }

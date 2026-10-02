@@ -26,8 +26,8 @@ export const adminNavItems: NavItem[] = [
   { key: "workProof", icon: Camera },
   { key: "complaints", icon: MessageSquareWarning },
   { key: "fees", icon: Banknote, href: `${ADMIN_ROOT}/fees` },
-  { key: "expenses", icon: ReceiptText },
+  { key: "expenses", icon: ReceiptText, href: `${ADMIN_ROOT}/expenses` },
   { key: "reports", icon: ChartColumn },
   { key: "users", icon: UserCog, href: `${ADMIN_ROOT}/users` },
-  { key: "settings", icon: Settings, roles: ["super_admin"] },
+  { key: "settings", icon: Settings, href: `${ADMIN_ROOT}/settings`, roles: ["super_admin"] },
 ];
