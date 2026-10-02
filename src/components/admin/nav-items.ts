@@ -25,7 +25,7 @@ export const adminNavItems: NavItem[] = [
   { key: "duties", icon: ClipboardList },
   { key: "workProof", icon: Camera },
   { key: "complaints", icon: MessageSquareWarning },
-  { key: "fees", icon: Banknote },
+  { key: "fees", icon: Banknote, href: `${ADMIN_ROOT}/fees` },
   { key: "expenses", icon: ReceiptText },
   { key: "reports", icon: ChartColumn },
   { key: "users", icon: UserCog, href: `${ADMIN_ROOT}/users` },
