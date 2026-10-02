@@ -662,7 +662,16 @@
       "feeHint": "علاقے کی عام فیس: {fee}",
       "status": "حالت",
       "notes": "نوٹس",
-      "create": "گھر شامل کریں"
+      "create": "گھر شامل کریں",
+      "add": "شامل کریں",
+      "newBlock": "نیا بلاک",
+      "newBlockPlaceholder": "مثلاً بلاک اے یا G-11/2",
+      "blockAdded": "بلاک شامل ہو گیا",
+      "noBlocksYet": "اس علاقے میں ابھی کوئی بلاک نہیں۔ یہاں شامل کریں۔",
+      "newStreet": "نئی گلی",
+      "newStreetPlaceholder": "مثلاً گلی نمبر 5",
+      "streetAdded": "گلی شامل ہو گئی",
+      "noStreetsYet": "اس بلاک میں ابھی کوئی گلی نہیں۔ یہاں شامل کریں۔"
     },
     "detail": {
       "title": "تفصیل",

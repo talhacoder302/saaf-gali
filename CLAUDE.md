@@ -89,6 +89,7 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - The monthly fee defaults to the area's `defaultMonthlyFee` (form pre-fills it; Excel rows with an empty fee get it) and can be changed per house. Whole rupees.
 - House numbers are unique per street, case-insensitively. Household mobiles are not unique (one owner, several houses).
 - Excel: `GET /admin/households/template` and `GET /admin/households/export?…filters` (route handlers using `src/server/household-excel.ts`, same columns as `EXCEL_COLUMNS`). Import is two steps: `previewImportAction(FormData)` parses and validates without saving; `importHouseholdsAction(rows)` re-validates the rows the browser sends back and inserts only valid ones. Parsing/validation is pure and tested in `src/lib/household-import.ts` (header aliases, Urdu values for occupant/status, duplicate in DB and in file, missing street, bad mobile). Users can only import into active areas in their scope.
+- The household form can add a missing block or street on the spot (`InlineCreate` under the Block/Street pickers, using the areas actions). The action's `refresh()` brings back the updated location tree, and the new item is selected.
 - "Create resident login" (`createResidentLogin`) makes a `resident` user with the household's mobile, `householdId` and area, and a temporary password.
 - Server Actions that take a file receive `FormData` (`formData.get("file")`); the action body limit is raised to 5 MB in `next.config.ts`.
 

@@ -662,7 +662,16 @@
       "feeHint": "Area default: {fee}",
       "status": "Status",
       "notes": "Notes",
-      "create": "Add household"
+      "create": "Add household",
+      "add": "Add",
+      "newBlock": "New block",
+      "newBlockPlaceholder": "e.g. Block A or G-11/2",
+      "blockAdded": "Block added",
+      "noBlocksYet": "This area has no blocks yet. Add one here.",
+      "newStreet": "New street",
+      "newStreetPlaceholder": "e.g. Street 5",
+      "streetAdded": "Street added",
+      "noStreetsYet": "This block has no streets yet. Add one here."
     },
     "detail": {
       "title": "Details",

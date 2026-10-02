@@ -7,6 +7,7 @@ import { useRef, useState, useTransition } from "react";
 import { Controller, useForm, type FieldPath } from "react-hook-form";
 import { toast } from "sonner";
 
+import { createBlockAction, createStreetAction } from "@/app/admin/areas/actions";
 import { createHouseholdAction, updateHouseholdAction } from "@/app/admin/households/actions";
 import { useErrorMessage } from "@/components/shared/use-error-message";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   type HouseholdFormOutput,
 } from "@/lib/validators/households";
 
+import { InlineCreate } from "./inline-create";
 import { blocksOf, locateStreet, streetsOf, type AreaNode, type HouseholdDetail } from "./types";
 
 type HouseholdFormDialogProps = {
@@ -161,6 +163,19 @@ export function HouseholdFormDialog({ open, onOpenChange, tree, household, defau
                     ))}
                   </SelectContent>
                 </Select>
+                {areaId ? (
+                  <>
+                    {blocks.length === 0 ? <FieldDescription>{t("noBlocksYet")}</FieldDescription> : null}
+                    <InlineCreate
+                      key={`block-${areaId}`}
+                      label={t("newBlock")}
+                      placeholder={t("newBlockPlaceholder")}
+                      successMessage={t("blockAdded")}
+                      onCreate={(name) => createBlockAction({ areaId, name })}
+                      onCreated={chooseBlock}
+                    />
+                  </>
+                ) : null}
               </Field>
               <Controller
                 name="streetId"
@@ -181,6 +196,19 @@ export function HouseholdFormDialog({ open, onOpenChange, tree, household, defau
                       </SelectContent>
                     </Select>
                     <FieldError>{errorMessage(fieldState.error?.message)}</FieldError>
+                    {blockId ? (
+                      <>
+                        {streets.length === 0 ? <FieldDescription>{t("noStreetsYet")}</FieldDescription> : null}
+                        <InlineCreate
+                          key={`street-${blockId}`}
+                          label={t("newStreet")}
+                          placeholder={t("newStreetPlaceholder")}
+                          successMessage={t("streetAdded")}
+                          onCreate={(name) => createStreetAction({ blockId, name, supervisorId: null, location: null })}
+                          onCreated={(id) => form.setValue("streetId", id, { shouldValidate: true })}
+                        />
+                      </>
+                    ) : null}
                   </Field>
                 )}
               />
