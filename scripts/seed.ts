@@ -20,10 +20,12 @@ import type { Role } from "@/lib/roles";
 import { passwordSchema } from "@/lib/validators/auth";
 import { Area, type City } from "@/models/Area";
 import { billStatus, formatReceiptNumber, planPayment } from "@/lib/fees";
-import { formatDate, monthKey } from "@/lib/format";
+import { approvalStatusFor, DEFAULT_EXPENSE_CATEGORIES } from "@/lib/expenses";
+import { dayKey, formatDate, karachiDayStart, monthKey } from "@/lib/format";
 import { addMonths } from "@/lib/months";
 import { Block } from "@/models/Block";
 import { Counter } from "@/models/Counter";
+import { Expense } from "@/models/Expense";
 import { FeeBill } from "@/models/FeeBill";
 import { Household } from "@/models/Household";
 import { Payment } from "@/models/Payment";
@@ -49,10 +51,21 @@ async function seedSettings() {
         receiptPrefix: "SG",
         feeDueDay: 10,
         expenseApprovalLimit: 5000,
+        expenseCategories: DEFAULT_EXPENSE_CATEGORIES,
+        supervisorsCanAddExpenses: true,
         currency: "PKR",
       },
     },
     { upsert: true },
+  );
+  // Fields added in later modules, for databases seeded before them.
+  await Settings.updateOne(
+    { key: "singleton", expenseCategories: { $exists: false } },
+    { $set: { expenseCategories: DEFAULT_EXPENSE_CATEGORIES } },
+  );
+  await Settings.updateOne(
+    { key: "singleton", supervisorsCanAddExpenses: { $exists: false } },
+    { $set: { supervisorsCanAddExpenses: true } },
   );
   console.log("  settings ready");
 }
@@ -133,6 +146,7 @@ const DEMO_USERS: DemoUser[] = [
   { name: "Farhan Butt", mobile: "03235550110", role: "resident", areas: ["G-11"], language: "ur" },
   { name: "Nasreen Akhtar", mobile: "03465550111", role: "resident", areas: ["I-8"], language: "ur" },
   { name: "Col. (R) Khalid Mahmood", mobile: "03005550112", role: "committee", areas: ["Satellite Town"], language: "en" },
+  { name: "Dr. Shahnaz Parveen", mobile: "03005550113", role: "committee", areas: ["G-11"], language: "ur" },
 ];
 
 async function seedDemoUsers(areaIds: Map<string, Types.ObjectId>) {
@@ -539,6 +553,99 @@ async function seedFees() {
   console.log(`  ${payments.length} payments, ${newBills.length} advance bills`);
 }
 
+// --- Expenses ----------------------------------------------------------------
+
+type DemoExpense = { category: string; description: string; min: number; max: number; by: "manager" | "supervisor" };
+
+const EXPENSE_CATALOGUE: DemoExpense[] = [
+  { category: "supplies", description: "Jharoo (brooms), 12 pcs", min: 1800, max: 2600, by: "supervisor" },
+  { category: "supplies", description: "Garbage bags, 3 bundles", min: 1200, max: 1800, by: "supervisor" },
+  { category: "supplies", description: "Phenyl and bleach for nalis", min: 900, max: 1500, by: "supervisor" },
+  { category: "supplies", description: "Gloves and masks for the team", min: 800, max: 1400, by: "supervisor" },
+  { category: "fuel", description: "Petrol for loader rickshaw", min: 3000, max: 4800, by: "supervisor" },
+  { category: "repair", description: "Wheelbarrow tyre and welding", min: 1500, max: 3500, by: "manager" },
+  { category: "repair", description: "Hand cart repair", min: 2000, max: 4000, by: "manager" },
+  { category: "transport", description: "Rickshaw hire for garbage lifting", min: 2500, max: 4000, by: "manager" },
+  { category: "misc", description: "Tea and water for the team", min: 600, max: 1200, by: "supervisor" },
+  { category: "misc", description: "Printing of fee slips", min: 1000, max: 2000, by: "manager" },
+];
+
+/** Big items above the approval limit: one per area each month, so the committee has work. */
+const BIG_EXPENSES: DemoExpense[] = [
+  { category: "transport", description: "Tractor trolley to Losar dump, 3 trips", min: 7000, max: 12000, by: "manager" },
+  { category: "repair", description: "New iron cover for nala", min: 6000, max: 9000, by: "manager" },
+];
+
+/**
+ * Three months of expenses for the areas that have streets: small ones that
+ * pass automatically, and bigger ones the committee approved, rejected, or
+ * (this month) still has to decide. Skipped once the demo expenses exist;
+ * expenses added by hand don't count.
+ */
+async function seedExpenses() {
+  const demoDescriptions = [...EXPENSE_CATALOGUE, ...BIG_EXPENSES].map((item) => item.description);
+  if (await Expense.exists({ description: { $in: demoDescriptions } })) {
+    console.log("  expenses already exist, not re-seeded");
+    return;
+  }
+  const settings = await loadSettings();
+  const today = dayKey();
+  const currentMonth = monthKey();
+  const months = [addMonths(currentMonth, -2), addMonths(currentMonth, -1), currentMonth];
+  const areas = await Area.find({ name: { $in: ["Satellite Town", "G-11"] } }).select("name").lean();
+
+  const docs: Record<string, unknown>[] = [];
+  for (const area of areas) {
+    const [manager, supervisor, committee] = await Promise.all([
+      User.findOne({ role: "area_manager", areaIds: area._id }).select("_id").lean(),
+      User.findOne({ role: "supervisor", areaIds: area._id }).select("_id").lean(),
+      User.findOne({ role: "committee", areaIds: area._id }).select("_id").lean(),
+    ]);
+    if (!manager || !supervisor) continue;
+
+    for (const [monthIndex, month] of months.entries()) {
+      const random = randomFor(`expenses:${area.name}:${month}`);
+      const isCurrent = month === currentMonth;
+      const lastDay = isCurrent ? Number(today.slice(8, 10)) : 28;
+      const picks = [...EXPENSE_CATALOGUE].sort(() => random() - 0.5).slice(0, 6);
+      picks.push(BIG_EXPENSES[monthIndex % BIG_EXPENSES.length] ?? BIG_EXPENSES[0]!);
+
+      for (const [index, item] of picks.entries()) {
+        const amount = Math.round((item.min + random() * (item.max - item.min)) / 50) * 50;
+        const day = `${month}-${String(1 + Math.floor(random() * lastDay)).padStart(2, "0")}`;
+        const date = karachiDayStart(day);
+        let status: string = approvalStatusFor(amount, settings.expenseApprovalLimit);
+        const review: Record<string, unknown> = {};
+        // Older big expenses were decided by the committee; one of them was turned down.
+        if (status === "pending" && !isCurrent && committee) {
+          const rejected = monthIndex === 0 && index === picks.length - 1 && area.name === "G-11";
+          status = rejected ? "rejected" : "approved";
+          review.reviewedBy = committee._id;
+          review.reviewedAt = new Date(date.getTime() + 2 * 24 * 60 * 60 * 1000);
+          review.reviewNote = rejected
+            ? "Rate is too high, get two more quotes first."
+            : "Checked the receipt, approved.";
+        }
+        docs.push({
+          areaId: area._id,
+          category: item.category,
+          description: item.description,
+          amount,
+          date,
+          month,
+          createdBy: item.by === "manager" ? manager._id : supervisor._id,
+          approvalStatus: status,
+          ...review,
+        });
+      }
+    }
+  }
+
+  if (docs.length > 0) await Expense.insertMany(docs);
+  const pending = docs.filter((doc) => doc.approvalStatus === "pending").length;
+  console.log(`  ${docs.length} expenses (${pending} waiting for approval)`);
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -552,6 +659,7 @@ async function main() {
   await seedHouseholds();
   await linkDemoResidents();
   await seedFees();
+  await seedExpenses();
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
