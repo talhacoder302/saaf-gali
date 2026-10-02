@@ -8,6 +8,8 @@ const areaSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 80 },
     city: { type: String, enum: CITIES, required: true },
+    // Short code used in receipt numbers (SG-SAT-000123). Set when first needed.
+    code: { type: String, trim: true, uppercase: true, maxlength: 8 },
     description: { type: String, trim: true, maxlength: 500 },
     // Kept in sync with User.areaIds by src/server/area-team.ts. User.areaIds
     // decides access; these lists are for showing the team quickly.
@@ -23,6 +25,7 @@ const areaSchema = new Schema(
 );
 
 areaSchema.index({ city: 1, name: 1 }, { unique: true });
+areaSchema.index({ code: 1 }, { unique: true, partialFilterExpression: { code: { $type: "string" } } });
 
 export type AreaDoc = InferSchemaType<typeof areaSchema> & { _id: Types.ObjectId };
 
