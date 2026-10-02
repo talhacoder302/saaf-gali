@@ -105,6 +105,26 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - `*-core.ts` files in `src/server` have no session checks and no `server-only` import so the seed and the DB integration test can use them; only call them from services that already checked permissions.
 - DB integration tests (`src/server/*.integration.test.ts`) run only when `MONGODB_TEST_URI` is set (PowerShell: `$env:MONGODB_TEST_URI="mongodb://127.0.0.1:27017"; npm test`). They use and drop `saaf_gali_vitest`.
 
+## Photos (Cloudflare R2)
+
+- Reuse `<PhotoUpload kind=… value onChange enabled>` (`src/components/shared/photo-upload.tsx`) for every photo. It compresses in the browser (browser-image-compression, ~150 KB, JPEG unless `keepFormat`, no web worker because that loads from a CDN), asks `POST /api/uploads` for a pre-signed PUT URL, uploads straight to R2 and returns `{ key, url }`. Forms save only the key.
+- Upload kinds live in `UPLOAD_KINDS` (`src/lib/uploads.ts`): folder + roles allowed. Add a kind there when a module needs photos. Keys are `<folder>/<userId>/<uuid>.<ext>`.
+- `src/server/storage.ts`: `createUploadUrl()` (route handler), `assertUploadedPhoto(actor, kind, key)` before saving a new key on a record (key must belong to this user and kind, object must exist in R2, ≤ 1 MB, image type), `photoUrl(key)` when reading (public `R2_PUBLIC_URL` link if set, else a 1-hour pre-signed GET). Records store keys (`receiptPhotoKey`, `logoKey`), never URLs.
+- Without the R2 keys `features.storage` is off: `<PhotoUpload enabled={false}>` says so and forms save without a photo; `/api/uploads` answers 503 `storage_not_configured`.
+- The S3 client sets `requestChecksumCalculation: "WHEN_REQUIRED"`; without it the SDK adds checksum params a browser PUT can't satisfy. The R2 bucket needs a CORS rule allowing `PUT` (header `Content-Type`) from the app's origin.
+- Photos render with `next/image` + `unoptimized` (pre-signed URLs change on every render, so optimisation would only cache misses).
+
+## Expenses and settings
+
+- **Approval rule** (`src/lib/expenses.ts`, pure, tested): amount above `Settings.expenseApprovalLimit` → `pending`, otherwise `auto`. Only `auto` and `approved` count as spent (`countsAsSpent`); use that in the hisaab and reports. Expenses are never deleted; rejected ones stay visible but don't count.
+- **Who**: add = super admin, area manager, and supervisors only when `Settings.supervisorsCanAddExpenses` (checked in the service and the upload route). Edit = super admin, area managers in their areas. Approve/reject = super admin and committee members of the expense's area (`canReviewExpense`); area managers never, nobody on their own expense. Reject needs a note.
+- Editing the amount, area or category (or any edit of a rejected expense) runs the approval rule again and clears the review. Reviews are a guarded update on `approvalStatus: "pending"`, so two reviewers can't both decide (`expense_already_reviewed`).
+- Dates: the form sends `"YYYY-MM-DD"`; stored as Pakistan midnight (`karachiDayStart`) plus `month` for filtering. No future days, at most 12 months back (`checkExpenseDay`).
+- Categories: `Settings.expenseCategories` holds built-in keys (`supplies`, `repair`, … translated via `expenses.category.*`) and custom names shown as typed (`useCategoryLabel()`). A new expense must use a category from Settings; an old one may keep a removed category.
+- Screens: `/admin/expenses` (filters in the URL, totals, by-category bars, Excel export at `/admin/expenses/export`), `/supervisor/expenses` (phone), `/resident/approvals` (committee only; the resident bottom nav shows it by role). Shared pieces in `src/components/shared/expenses/`; actions in `src/app/actions/expenses.ts`.
+- Pending expenses `notify()` the area's committee and the super admins; a decision notifies whoever added it.
+- **Settings** (`/admin/settings`, super admin): organisation name, logo (shown on the public receipt), receipt prefix (new receipts only), fee due day, approval limit, supervisor switch, categories. `loadSettings()` (`src/server/settings.ts`, seed-safe) fills defaults for fields an older document lacks; session-aware reads and writes are in `src/server/settings-admin.ts`.
+
 ## Data model
 
 Later modules implement these models in `src/models`.
@@ -122,12 +142,12 @@ Later modules implement these models in `src/models`.
 - **FeeBill**: householdId, areaId, blockId, streetId, month ("YYYY-MM"), amount, paidAmount, status (unpaid | partial | paid | exempt), createdByPaymentId (advance bills). Unique index on (householdId, month).
 - **Payment**: householdId, areaId, streetId, billIds[], allocations[{billId, month, amount}], amount, method (cash | bank | jazzcash | easypaisa), note, receivedBy, receiptNumber (unique, sequential per area), publicToken (unique), paidAt, monthsCovered[], status (active | cancelled), cancelledAt, cancelledBy, cancelReason. Never deleted.
 - **Counter**: _id ("receipt:<areaId>"), seq. **Area.code**: short receipt code (SAT, G11).
-- **Expense**: areaId, category (supplies | repair | fuel | salary | transport | misc), description, amount, date, receiptPhotoUrl, createdBy, approvalStatus (auto | pending | approved | rejected), approvedBy
+- **Expense**: areaId, category (built-in key or custom name from Settings), description, amount, date (Pakistan midnight), month ("YYYY-MM"), receiptPhotoKey, createdBy, approvalStatus (auto | pending | approved | rejected), reviewedBy, reviewedAt, reviewNote. Never deleted.
 - **Salary**: workerId, month, baseSalary, daysPresent, deductions, advances, netPaid, paidAt, expenseId
 - **Advance**: workerId, amount, date, note, recoveredInMonth
 - **Notification**: userId, type, title, body, link, read, channelsSent[]
 - **ActivityLog**: actorId, areaId, action, entity, entityId, meta
-- **Settings**: singleton; organisation name, logo, receipt prefix, fee due day, expense approval limit (above this amount needs committee approval), currency PKR
+- **Settings**: singleton; organisationName, logoKey, receiptPrefix, feeDueDay, expenseApprovalLimit (above this amount needs committee approval), expenseCategories[], supervisorsCanAddExpenses, currency PKR
 
 ## Coding rules
 
@@ -175,6 +195,8 @@ Later modules implement these models in `src/models`.
 - Server Components get a reference, not the value, when they import a non-component export from a `"use client"` file. Keep shared constants in `src/lib`.
 - `scripts/` cannot import files that start with `import "server-only"` (it throws outside Next). Shared DB helpers that the seed needs (like `team-sync.ts`) leave that import out.
 - `notFound()` in a page under a `loading.tsx` renders the not-found UI with HTTP 200 because the response is already streaming. That is expected.
+- `redirect()` (e.g. `requirePageUser` sending someone home) in a page under a `loading.tsx` also streams: HTTP 200 with a `__next-page-redirect` meta refresh. Test for that marker, not for a 307.
+- A Server Action only resolves on pages that import it. Calling its id on another page returns an empty response, so shared actions go in `src/app/actions/`.
 - Every page ships the full message catalogue to the client, so page HTML contains all example strings; don't rely on "text not in HTML" for scope checks in tests.
 - A message key can't be both a string and a group: `households.import` is the import dialog's group, so the button label is `households.importLabel`.
 - Zod schemas that transform (e.g. `optionalMobileSchema` turns "" into null) have different input and output types: use `useForm<Input, unknown, Output>` and send the input shape to the action.
@@ -230,3 +252,13 @@ Later modules implement these models in `src/models`.
 - Pages: `/admin/fees` (month/area overview, generate dialog, reminders), `/admin/fees/collect` and `/supervisor/collect` (shared `CollectView`, `?household=` opens a house), `/receipt/[token]` + `/pdf` (public, @react-pdf/renderer, Helvetica so English only), household page fee history with super-admin cancel, resident home (`/resident`) and `/resident/bills`.
 - Seed: bills for the last 3 months for every area, and (once) about 1,100 payments planned with `planPayment` and bulk-inserted: paid, pending, partial, advance and defaulter households.
 - Tests: `src/lib/fees.test.ts` (allocation oldest-first/partial/advance, idempotent bill planning, receipts, messages) and `src/server/fees.integration.test.ts` (real MongoDB: duplicate-proof generation incl. concurrent clicks, allocation and cancel, concurrent payments).
+
+### Module 5: expenses and settings
+
+- Models: `Expense`; `Settings` gains `logoKey`, `expenseCategories`, `supervisorsCanAddExpenses`; ActivityLog action `reject`.
+- Photo uploads: `src/lib/uploads.ts`, `src/server/storage.ts`, `POST /api/uploads`, `<PhotoUpload>` (reused by later modules).
+- Pure logic: `src/lib/expenses.ts`; validators `src/lib/validators/{expenses,settings}.ts`; `dayKey()` / `karachiDayStart()` in `src/lib/format.ts`.
+- Services: `expenses.ts` (list + totals, form options, create, edit, review, approval queue, supervisor's own list), `expense-excel.ts`, `settings-admin.ts`, `listAreaFilterOptions()` in `areas.ts` (archived areas too, for filters). `excelResponse` moved to `src/app/admin/excel-response.ts`.
+- Pages: `/admin/expenses` (+ `/export`), `/admin/settings`, `/supervisor/expenses` (+ home tile), `/resident/approvals` (committee; home tile with pending count). Public receipt shows the logo.
+- Seed: settings get categories and the supervisor switch on; second committee member Dr. Shahnaz Parveen (`03005550113`, G-11); about 40 expenses over 3 months in Satellite Town and G-11 (auto, approved, one rejected, one pending per area this month). Skipped once the demo expenses exist; hand-added expenses don't block it.
+- Tests: `src/lib/expenses.test.ts` (approval rule, permissions, dates, totals, validators, settings), `src/lib/uploads.test.ts` (key ownership, upload request).
