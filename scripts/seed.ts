@@ -7,7 +7,8 @@
  * Needs MONGODB_URI, SEED_ADMIN_MOBILE and SEED_ADMIN_PASSWORD in .env.local.
  * Each module adds its own demo data here.
  */
-import type { Types } from "mongoose";
+import { randomBytes } from "node:crypto";
+import { Types } from "mongoose";
 
 import type { Locale } from "@/i18n/config";
 import { connectDB, disconnectDB } from "@/lib/db";
@@ -18,8 +19,16 @@ import { hashPassword } from "@/lib/password";
 import type { Role } from "@/lib/roles";
 import { passwordSchema } from "@/lib/validators/auth";
 import { Area, type City } from "@/models/Area";
+import { billStatus, formatReceiptNumber, planPayment } from "@/lib/fees";
+import { formatDate, monthKey } from "@/lib/format";
+import { addMonths } from "@/lib/months";
 import { Block } from "@/models/Block";
+import { Counter } from "@/models/Counter";
+import { FeeBill } from "@/models/FeeBill";
 import { Household } from "@/models/Household";
+import { Payment } from "@/models/Payment";
+import { ensureAreaCode, generateBillsForAreas } from "@/server/billing-core";
+import { loadSettings } from "@/server/settings";
 import { Settings } from "@/models/Settings";
 import { Street } from "@/models/Street";
 import { User } from "@/models/User";
@@ -368,6 +377,168 @@ async function linkDemoResidents() {
   }
 }
 
+// --- Fees ----------------------------------------------------------------------
+
+/** "2026-10" + day 12 -> 12 Oct 2026, 11:00 in Pakistan. */
+function karachiDate(month: string, day: number): Date {
+  return new Date(`${month}-${String(day).padStart(2, "0")}T11:00:00+05:00`);
+}
+
+/**
+ * Bills for the last three months and a realistic payment history. Payments
+ * are planned in memory with the same planPayment() the app uses, then saved
+ * in bulk (one by one would take minutes on Atlas). Skipped once any payment
+ * exists, so running the seed again never duplicates money.
+ */
+async function seedFees() {
+  const currentMonth = monthKey();
+  const months = [addMonths(currentMonth, -2), addMonths(currentMonth, -1), currentMonth] as const;
+  const areas = await Area.find({}).select("name managerIds").lean();
+
+  let billsCreated = 0;
+  for (const month of months) {
+    billsCreated += (await generateBillsForAreas(areas.map((a) => a._id), month)).created;
+  }
+  console.log(`  bills for ${months.join(", ")}: ${billsCreated} created`);
+
+  if (await Payment.exists({})) {
+    console.log("  payments already exist, history not re-seeded");
+    return;
+  }
+
+  const settings = await loadSettings();
+  const superAdmin = await User.findOne({ role: "super_admin" }).select("_id").lean();
+  const streets = new Map((await Street.find({}).select("supervisorId").lean()).map((s) => [s._id.toString(), s]));
+  const areaById = new Map(areas.map((a) => [a._id.toString(), a]));
+  const households = await Household.find({ status: "active", monthlyFee: { $gt: 0 } })
+    .collation({ locale: "en", numericOrdering: true })
+    .sort({ areaId: 1, streetId: 1, houseNumber: 1 })
+    .lean();
+  const allBills = await FeeBill.find({ householdId: { $in: households.map((h) => h._id) } }).lean();
+  const billsByHousehold = new Map<string, typeof allBills>();
+  for (const bill of allBills) {
+    const key = bill.householdId.toString();
+    billsByHousehold.set(key, [...(billsByHousehold.get(key) ?? []), bill]);
+  }
+
+  const today = Number(formatDate(Date.now(), "d"));
+  const sequences = new Map<string, number>();
+  const codes = new Map<string, string>();
+  const changedBills = new Map<string, { amount: number; paidAmount: number }>();
+  const newBills: Record<string, unknown>[] = [];
+  const payments: Record<string, unknown>[] = [];
+
+  for (const household of households) {
+    const random = randomFor(`fees:${household.ownerName}:${household.houseNumber}:${household.monthlyFee}`);
+    const fee = household.monthlyFee;
+    const roll = random();
+    const day = (month: string) => {
+      const pick = 3 + Math.floor(random() * 22);
+      return month === currentMonth ? Math.max(1, Math.min(pick, today)) : pick;
+    };
+    // [amount, month paid in]
+    const plan: [number, string][] =
+      roll < 0.55
+        ? [[fee * 2, months[1]], [fee, months[2]]]
+        : roll < 0.7
+          ? [[fee * 2, months[1]]]
+          : roll < 0.8
+            ? [[fee + Math.floor(fee / 2), months[1]]]
+            : roll < 0.88
+              ? [[fee * 6, months[1]]]
+              : [];
+
+    const areaKey = household.areaId.toString();
+    if (!codes.has(areaKey)) codes.set(areaKey, await ensureAreaCode(household.areaId));
+    const receiver =
+      streets.get(household.streetId.toString())?.supervisorId ?? areaById.get(areaKey)?.managerIds[0] ?? superAdmin?._id;
+    if (!receiver) continue;
+
+    const state = (billsByHousehold.get(household._id.toString()) ?? []).map((bill) => ({
+      id: bill._id.toString(),
+      month: bill.month,
+      amount: bill.amount,
+      paidAmount: bill.paidAmount,
+    }));
+
+    for (const [amount, month] of plan) {
+      const paymentId = new Types.ObjectId();
+      const result = planPayment({
+        openBills: state.filter((bill) => bill.paidAmount < bill.amount),
+        amount,
+        monthlyFee: fee,
+        billedMonths: new Set(state.map((bill) => bill.month)),
+        advanceFrom: month,
+        allowAdvance: true,
+      });
+      if (!result.ok) continue;
+
+      const allocations = result.allocations.map((allocation) => {
+        if (allocation.billId) {
+          const bill = state.find((b) => b.id === allocation.billId);
+          if (bill) {
+            bill.paidAmount += allocation.amount;
+            changedBills.set(bill.id, { amount: bill.amount, paidAmount: bill.paidAmount });
+          }
+          return { billId: new Types.ObjectId(allocation.billId), month: allocation.month, amount: allocation.amount };
+        }
+        const billId = new Types.ObjectId();
+        state.push({ id: billId.toString(), month: allocation.month, amount: allocation.billAmount, paidAmount: allocation.amount });
+        newBills.push({
+          _id: billId,
+          householdId: household._id,
+          areaId: household.areaId,
+          blockId: household.blockId,
+          streetId: household.streetId,
+          month: allocation.month,
+          amount: allocation.billAmount,
+          paidAmount: allocation.amount,
+          status: billStatus(allocation.billAmount, allocation.amount),
+          createdByPaymentId: paymentId,
+        });
+        return { billId, month: allocation.month, amount: allocation.amount };
+      });
+
+      const sequence = (sequences.get(areaKey) ?? 0) + 1;
+      sequences.set(areaKey, sequence);
+      const methodRoll = random();
+      payments.push({
+        _id: paymentId,
+        householdId: household._id,
+        areaId: household.areaId,
+        streetId: household.streetId,
+        billIds: allocations.map((a) => a.billId),
+        allocations,
+        monthsCovered: [...new Set(allocations.map((a) => a.month))].sort(),
+        amount,
+        method: methodRoll < 0.7 ? "cash" : methodRoll < 0.85 ? "jazzcash" : methodRoll < 0.95 ? "easypaisa" : "bank",
+        receivedBy: receiver,
+        receiptNumber: formatReceiptNumber(settings.receiptPrefix, codes.get(areaKey) ?? "AREA", sequence),
+        publicToken: randomBytes(16).toString("base64url"),
+        paidAt: karachiDate(month, day(month)),
+        status: "active",
+      });
+    }
+  }
+
+  if (changedBills.size > 0) {
+    await FeeBill.bulkWrite(
+      [...changedBills].map(([id, bill]) => ({
+        updateOne: {
+          filter: { _id: new Types.ObjectId(id) },
+          update: { $set: { paidAmount: bill.paidAmount, status: billStatus(bill.amount, bill.paidAmount) } },
+        },
+      })),
+    );
+  }
+  if (newBills.length > 0) await FeeBill.insertMany(newBills);
+  if (payments.length > 0) await Payment.insertMany(payments);
+  for (const [areaId, seq] of sequences) {
+    await Counter.updateOne({ _id: `receipt:${areaId}` }, { $max: { seq } }, { upsert: true });
+  }
+  console.log(`  ${payments.length} payments, ${newBills.length} advance bills`);
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -380,6 +551,7 @@ async function main() {
   await seedBlocksAndStreets(areaIds);
   await seedHouseholds();
   await linkDemoResidents();
+  await seedFees();
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
