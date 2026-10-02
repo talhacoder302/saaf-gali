@@ -92,6 +92,18 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - "Create resident login" (`createResidentLogin`) makes a `resident` user with the household's mobile, `householdId` and area, and a temporary password.
 - Server Actions that take a file receive `FormData` (`formData.get("file")`); the action body limit is raised to 5 MB in `next.config.ts`.
 
+## Fees and payments
+
+- **Money is whole rupees.** Never divide money except `Math.floor` for display percentages. All fee maths lives in `src/lib/fees.ts` (pure, unit tested): `planBills`, `planPayment`, `amountForMonths`, `billStatus`, receipt numbers, area codes. Months are `"YYYY-MM"` strings handled by `src/lib/months.ts` (no Date maths); the current month is `monthKey()` (Asia/Karachi).
+- **Bills** are created only by the "Generate bills" button (no cron): `generateBillsForAreas()` in `src/server/billing-core.ts` upserts with `$setOnInsert` on the unique `(householdId, month)` index, so pressing twice (even at the same moment) never duplicates. Only `isBillable` households with a fee above 0 are billed. Months allowed: a year back up to next month.
+- **Payments** go through `recordPaymentCore()` (`src/server/payments-core.ts`): oldest unpaid month first, then advance months (bills created on the fly, `createdByPaymentId` set, max 24 months; only for active houses). Each bill update is guarded on the `paidAmount` that was read; on a clash everything is rolled back and `payment_conflict` is returned. The collect screen's month checkboxes are always a run from the oldest month, so "pay these months" and "oldest first" agree.
+- **Receipt numbers**: `<Settings.receiptPrefix>-<Area.code>-<6 digits>` (e.g. `SG-SAT-000123`), sequence per area from the `Counter` collection (`receipt:<areaId>`, atomic `$inc`). `Area.code` is assigned on first use by `ensureAreaCode()`.
+- **Receipts are public by link**: `/receipt/<publicToken>` (+ `/pdf`), 128-bit random token, `noindex`. WhatsApp texts (Roman Urdu) are built in `src/lib/fee-messages.ts` and sent with wa.me links only. Absolute links use `getAppOrigin()` (`NEXT_PUBLIC_APP_URL`, else the request host).
+- **Cancelling** a payment: super admin only, reason required. `cancelPaymentCore()` marks the payment `cancelled` (who, when, why) and subtracts each allocation from its bill. Payments and bills are never deleted.
+- **Who**: generate bills and fees overview = super admin / area manager (own areas). Collect = admins + supervisors (own areas). Residents see only their own household (`getMyFees`).
+- `*-core.ts` files in `src/server` have no session checks and no `server-only` import so the seed and the DB integration test can use them; only call them from services that already checked permissions.
+- DB integration tests (`src/server/*.integration.test.ts`) run only when `MONGODB_TEST_URI` is set (PowerShell: `$env:MONGODB_TEST_URI="mongodb://127.0.0.1:27017"; npm test`). They use and drop `saaf_gali_vitest`.
+
 ## Data model
 
 Later modules implement these models in `src/models`.
@@ -106,8 +118,9 @@ Later modules implement these models in `src/models`.
 - **Duty**: workerId, streetId, areaId, date, shift (morning | evening), status (scheduled | in_progress | completed | missed | reassigned), reassignedTo
 - **WorkLog**: dutyId, workerId, streetId, startPhotoUrl, endPhotoUrl, startAt, endAt, startLocation, endLocation, supervisorStatus (pending | approved | redo), supervisorNote
 - **Complaint**: householdId, areaId, streetId, raisedBy, category (garbage | drain | sweeping | other), description, photoUrls[], status (new | assigned | resolved | confirmed | reopened), assignedTo, resolvedAt, resolutionPhotoUrl, rating
-- **FeeBill**: householdId, areaId, streetId, month ("YYYY-MM"), amount, paidAmount, status (unpaid | partial | paid | exempt). Unique index on (householdId, month).
-- **Payment**: householdId, billIds[], amount, method (cash | bank | jazzcash | easypaisa), receivedBy, receiptNumber (unique, sequential per area), paidAt, monthsCovered[]
+- **FeeBill**: householdId, areaId, blockId, streetId, month ("YYYY-MM"), amount, paidAmount, status (unpaid | partial | paid | exempt), createdByPaymentId (advance bills). Unique index on (householdId, month).
+- **Payment**: householdId, areaId, streetId, billIds[], allocations[{billId, month, amount}], amount, method (cash | bank | jazzcash | easypaisa), note, receivedBy, receiptNumber (unique, sequential per area), publicToken (unique), paidAt, monthsCovered[], status (active | cancelled), cancelledAt, cancelledBy, cancelReason. Never deleted.
+- **Counter**: _id ("receipt:<areaId>"), seq. **Area.code**: short receipt code (SAT, G11).
 - **Expense**: areaId, category (supplies | repair | fuel | salary | transport | misc), description, amount, date, receiptPhotoUrl, createdBy, approvalStatus (auto | pending | approved | rejected), approvedBy
 - **Salary**: workerId, month, baseSalary, daysPresent, deductions, advances, netPaid, paidAt, expenseId
 - **Advance**: workerId, amount, date, note, recoveredInMonth
@@ -153,6 +166,7 @@ Later modules implement these models in `src/models`.
 - npm 11 skips some package install scripts (esbuild, @swc/core, unrs-resolver). Everything works without them; do not add `--ignore-scripts` workarounds.
 - `@tanstack/react-table` is v9: use `useTable({ features, columns, data })` with `tableFeatures({...})` and `createColumnHelper<typeof features, Row>()`, not the v8 `useReactTable`/`getCoreRowModel` API. The package ships guides in `node_modules/@tanstack/react-table/skills/`.
 - Mongoose 9 filter types are strict: pass `{ $and: [...] }` (what `scopeQueryToUserAreas` returns) rather than a plain `Record<string, unknown>`.
+- `scopeQueryToUserAreas` puts area ids in as strings. `find()`/`countDocuments()` cast them, but `aggregate()` does not: for aggregation `$match` build the area filter with `new Types.ObjectId(...)` (see `getFeesOverview`).
 - Auth.js `signIn()` in a Server Action rethrows `CredentialsSignin` subclasses; our `LoginError` carries the code (`invalid_credentials`, `rate_limited`, `account_disabled`).
 - `getCurrentUser()` is cached per request. After bumping `sessionVersion` in the same request (password change), don't call it again; use values returned by the service, then `refreshSession()` to re-issue the cookie.
 - `/logout` (GET route) exists only to clear a cookie the database no longer accepts; normal logout is `logoutAction`.
@@ -206,3 +220,12 @@ Later modules implement these models in `src/models`.
 - Admin → Households (`/admin/households`): cascading area/block/street filters, status filter, search by house number, name or mobile (any format), add/edit dialog, Excel import dialog (template → upload → per-row preview → import), export of the current filter. Detail page (`/admin/households/[id]`) with details, linked residents, "Create resident login", and placeholder cards for fee history and complaints.
 - Seed: 15–30 households on every street (about 870), with tenants, vacant/exempt houses, custom fees and mobiles; links the demo residents Ayesha and Farhan to a house.
 - Tests: `src/lib/household-import.test.ts`.
+
+### Module 4: fees
+
+- Models `FeeBill`, `Payment`, `Counter`; `Area.code`; ActivityLog actions `generate`, `cancel` (payments log as `payment`).
+- Pure logic: `src/lib/fees.ts`, `src/lib/months.ts`, `src/lib/fee-messages.ts`; validators `src/lib/validators/fees.ts`.
+- Services: `billing-core.ts` + `billing.ts` (generate, overview with paid/pending/defaulters), `payments-core.ts` + `payments.ts` (search, collect context, record, cancel, receipt by token, household history, resident fees), `settings.ts` (`loadSettings`), `app-url.ts`.
+- Pages: `/admin/fees` (month/area overview, generate dialog, reminders), `/admin/fees/collect` and `/supervisor/collect` (shared `CollectView`, `?household=` opens a house), `/receipt/[token]` + `/pdf` (public, @react-pdf/renderer, Helvetica so English only), household page fee history with super-admin cancel, resident home (`/resident`) and `/resident/bills`.
+- Seed: bills for the last 3 months for every area, and (once) about 1,100 payments planned with `planPayment` and bulk-inserted: paid, pending, partial, advance and defaulter households.
+- Tests: `src/lib/fees.test.ts` (allocation oldest-first/partial/advance, idempotent bill planning, receipts, messages) and `src/server/fees.integration.test.ts` (real MongoDB: duplicate-proof generation incl. concurrent clicks, allocation and cancel, concurrent payments).

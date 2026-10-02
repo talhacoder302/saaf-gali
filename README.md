@@ -45,7 +45,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 
 3. In Atlas, allow your IP address under **Network Access**.
 
-4. Seed the database. This creates the `saaf_gali` database, default settings, four demo areas (Satellite Town and G-11 come with blocks, streets and about 870 households), your super admin and some demo users. It is safe to run again; existing users, passwords and your own changes are left alone.
+4. Seed the database. This creates the `saaf_gali` database, default settings, four demo areas (Satellite Town and G-11 come with blocks, streets, about 870 households and three months of bills and payments), your super admin and some demo users. It is safe to run again; existing users, passwords and your own changes are left alone.
 
    ```bash
    npm run seed
@@ -79,7 +79,11 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 | `/admin` | Admin panel (super admin, area manager) |
 | `/admin/users` | Users: search, filter, add, edit, disable, reset password |
 | `/admin/areas` | Areas: add, edit, archive; open one to manage its blocks, streets and team |
-| `/admin/households` | Households: filter, search, add, edit, import from / export to Excel; open one for details and resident login |
+| `/admin/households` | Households: filter, search, add, edit, import from / export to Excel; open one for details, fee history and resident login |
+| `/admin/fees` | Fees: generate monthly bills, collection totals, pending list, defaulters, WhatsApp reminders |
+| `/admin/fees/collect`, `/supervisor/collect` | Collect a payment (mobile-friendly) and send the receipt on WhatsApp |
+| `/receipt/<token>` | Public receipt page with PDF download (this is the link sent on WhatsApp) |
+| `/resident`, `/resident/bills` | Resident: amount due, bills and receipts |
 | `/supervisor`, `/worker`, `/resident` | Mobile screens for each role (residents and committee members use `/resident`) |
 | `/{role}/profile` | Profile: language, change password, logout |
 | `/api/health` | JSON health check: database status and which optional features are on |
@@ -93,7 +97,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS, shadcn/ui, MongoDB
 | `npm start` | Run the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check (`tsc --noEmit`) |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` | Unit tests (Vitest). Set `MONGODB_TEST_URI` (e.g. `mongodb://127.0.0.1:27017`) to also run the database tests |
 | `npm run seed` | Seed the database using `.env.local` |
 
 ## Deploying to Hostinger (Node.js hosting)
