@@ -30,6 +30,7 @@ import { FeeBill } from "@/models/FeeBill";
 import { Household } from "@/models/Household";
 import { Payment } from "@/models/Payment";
 import { ensureAreaCode, generateBillsForAreas } from "@/server/billing-core";
+import { ensureAreaSlug } from "@/server/hisaab-core";
 import { loadSettings } from "@/server/settings";
 import { Settings } from "@/models/Settings";
 import { Street } from "@/models/Street";
@@ -70,21 +71,23 @@ async function seedSettings() {
   console.log("  settings ready");
 }
 
-const AREAS: { name: string; city: City; description: string; defaultMonthlyFee: number }[] = [
+const AREAS: { name: string; city: City; description: string; defaultMonthlyFee: number; publicHisaab: boolean }[] = [
   {
     name: "Satellite Town",
     city: "Rawalpindi",
     description: "Blocks A to F around Commercial Market.",
     defaultMonthlyFee: 150,
+    publicHisaab: true,
   },
   {
     name: "Bahria Town Phase 4",
     city: "Rawalpindi",
     description: "Civic Centre and surrounding streets.",
     defaultMonthlyFee: 200,
+    publicHisaab: false,
   },
-  { name: "G-11", city: "Islamabad", description: "Sectors G-11/1 to G-11/4.", defaultMonthlyFee: 150 },
-  { name: "I-8", city: "Islamabad", description: "Sectors I-8/1 to I-8/4.", defaultMonthlyFee: 100 },
+  { name: "G-11", city: "Islamabad", description: "Sectors G-11/1 to G-11/4.", defaultMonthlyFee: 150, publicHisaab: true },
+  { name: "I-8", city: "Islamabad", description: "Sectors I-8/1 to I-8/4.", defaultMonthlyFee: 100, publicHisaab: false },
 ];
 
 async function seedAreas(): Promise<Map<string, Types.ObjectId>> {
@@ -450,12 +453,14 @@ async function seedFees() {
       const pick = 3 + Math.floor(random() * 22);
       return month === currentMonth ? Math.max(1, Math.min(pick, today)) : pick;
     };
-    // [amount, month paid in]
+    // [amount, month paid in]. Regular payers pay month by month, so every
+    // month has collections in the hisaab (allocation is oldest first, so the
+    // bills end up the same as paying two months at once).
     const plan: [number, string][] =
       roll < 0.55
-        ? [[fee * 2, months[1]], [fee, months[2]]]
+        ? [[fee, months[0]], [fee, months[1]], [fee, months[2]]]
         : roll < 0.7
-          ? [[fee * 2, months[1]]]
+          ? [[fee, months[0]], [fee, months[1]]]
           : roll < 0.8
             ? [[fee + Math.floor(fee / 2), months[1]]]
             : roll < 0.88
@@ -646,6 +651,20 @@ async function seedExpenses() {
   console.log(`  ${docs.length} expenses (${pending} waiting for approval)`);
 }
 
+/**
+ * Public hisaab links for the areas marked in AREAS. New areas get the flag on
+ * insert; databases seeded before Module 6 get it only while the field is
+ * missing, so an admin who switched a link off keeps it off.
+ */
+async function seedHisaabLinks() {
+  const wanted = AREAS.filter((area) => area.publicHisaab).map((area) => area.name);
+  await Area.updateMany({ name: { $in: wanted }, publicHisaab: { $exists: false } }, { $set: { publicHisaab: true } });
+  const areas = await Area.find({ name: { $in: wanted }, publicHisaab: true }).select("_id").lean();
+  const links: string[] = [];
+  for (const area of areas) links.push(`/hisaab/${await ensureAreaSlug(area._id)}`);
+  console.log(`  public hisaab links: ${links.join(", ") || "none"}`);
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -660,6 +679,7 @@ async function main() {
   await linkDemoResidents();
   await seedFees();
   await seedExpenses();
+  await seedHisaabLinks();
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
