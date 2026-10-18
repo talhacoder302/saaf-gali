@@ -125,13 +125,25 @@ A web app to manage street cleaning (gali ki safai) teams in Rawalpindi and Isla
 - Pending expenses `notify()` the area's committee and the super admins; a decision notifies whoever added it.
 - **Settings** (`/admin/settings`, super admin): organisation name, logo (shown on the public receipt), receipt prefix (new receipts only), fee due day, approval limit, supervisor switch, categories. `loadSettings()` (`src/server/settings.ts`, seed-safe) fills defaults for fields an older document lacks; session-aware reads and writes are in `src/server/settings-admin.ts`.
 
+## Hisaab (transparency page)
+
+- **Money rules** (`src/lib/hisaab.ts`, pure, tested): an area starts at Rs. 0; opening balance of a month = closing balance of the month before (everything collected minus everything spent earlier); closing = opening + collected − spent. *Collected* = active payments by the Pakistan month of `paidAt` (cash received, including arrears and advance), *spent* = `countsAsSpent` expenses by `month`. Cancelled payments and pending/rejected expenses never count; pending ones show as a note.
+- **Collection summary** uses this month's bills only (`collectionSummary`, exempt and Rs. 0 bills left out): households paid / partial / total and the amount percent (`Math.floor`). It never carries names, house numbers or per-house amounts, so it is safe to show publicly. Keep it that way: the public page must only ever get aggregate numbers and expense details.
+- `buildAreaHisaab(area, month, photoUrl)` in `src/server/hisaab-core.ts` (no session, used by tests) does all queries; the payments aggregation buckets by month with `$dateToString` in Asia/Karachi. Months offered run from the area's first bill/payment/expense (at most 36 back) to the current month; an unknown `?month=` falls back to the newest.
+- **Who**: `HISAAB_ROLES` = super admin, area managers (own areas), residents and committee (own area only), through `getHisaab()` (`src/server/hisaab.ts`). Archived areas stay readable in the app. An area outside the user's scope 404s like a missing one.
+- **Public link**: `/hisaab/<slug>?month=YYYY-MM` (+ `/pdf`), no login, `noindex`. Works only while `Area.publicHisaab` is on and the area is active (`getPublicHisaab()`); otherwise 404. Admins switch it in the area form ("Public hisaab link"). `ensureAreaSlug()` assigns the slug the first time it is switched on (name, then name + city, then a number) and keeps it after renames, so shared links keep working. Share text is Roman Urdu (`hisaabMessage`).
+- **Screens**: `/admin/hisaab` (area + month pickers, public link box with copy/WhatsApp), `/resident/hisaab` (bottom nav + home tile), `/hisaab/[areaSlug]`. All three render `<HisaabView>` (`src/components/shared/hisaab/`), which lays out by **container queries** (`@container`, `@2xl:`), not screen breakpoints, because the resident shell is a narrow column even on desktop. The area page shows whether the link is on.
+- **PDF**: `src/components/pdf/hisaab-document.tsx` (English, Helvetica; category labels from `en.json`), served by `hisaabPdfResponse()` in `src/app/hisaab-pdf.ts` from `/admin/hisaab/pdf`, `/resident/hisaab/pdf` (`?area=&month=`, service checks scope) and the public `/pdf`.
+- **Chart**: Recharts grouped bars, last 6 months, colours `--chart-1` (collected) and `--chart-2` (spent), validated for colour-blind contrast in light and dark. Legend, tooltip and a "Show the numbers" table, so colour is never the only cue. The chart stays left-to-right in Urdu (`dir="ltr"`); axis ticks show the month only (year on the first tick and January) because Urdu month names are long.
+- `<PhotoViewer>` (`src/components/shared/photo-viewer.tsx`): thumbnail that opens the full photo in a dialog. Reuse it for work proof and complaint photos.
+
 ## Data model
 
 Later modules implement these models in `src/models`.
 
 - **User**: name, mobile (unique, Pakistani format 03XXXXXXXXX), email (optional), passwordHash, role (super_admin | area_manager | supervisor | worker | resident | committee), areaIds[], householdId (for residents), language (en | ur), status (active | disabled), pushSubscriptions[], lastLoginAt, mustChangePassword, sessionVersion, createdBy. `User.areaIds` is the source of truth for access; `Area.managerIds` etc. are kept in sync by the areas module.
 - **LoginAttempt**: mobile, createdAt (TTL 15 min). One document per failed login.
-- **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status (active | archived). Unique (city, name).
+- **Area**: name, city (Rawalpindi | Islamabad), description, managerIds[], supervisorIds[], committeeIds[], defaultMonthlyFee, status (active | archived), code (receipts), publicHisaab, slug (public hisaab link, unique, kept after renames). Unique (city, name).
 - **Block**: areaId, name. Unique (areaId, name).
 - **Street**: areaId, blockId, name, location {lat, lng} optional, supervisorId. Unique (blockId, name).
 - **Household**: areaId, blockId, streetId, houseNumber, ownerName, occupantType (owner | tenant), contactName, mobile, email, monthlyFee, status (active | vacant | exempt), notes, createdBy. Unique index on (streetId, houseNumber). Only active households are billed.
@@ -262,3 +274,12 @@ Later modules implement these models in `src/models`.
 - Pages: `/admin/expenses` (+ `/export`), `/admin/settings`, `/supervisor/expenses` (+ home tile), `/resident/approvals` (committee; home tile with pending count). Public receipt shows the logo.
 - Seed: settings get categories and the supervisor switch on; second committee member Dr. Shahnaz Parveen (`03005550113`, G-11); about 40 expenses over 3 months in Satellite Town and G-11 (auto, approved, one rejected, one pending per area this month). Skipped once the demo expenses exist; hand-added expenses don't block it.
 - Tests: `src/lib/expenses.test.ts` (approval rule, permissions, dates, totals, validators, settings), `src/lib/uploads.test.ts` (key ownership, upload request).
+
+### Module 6: transparency (hisaab)
+
+- `Area.publicHisaab` + `Area.slug`; area form switch "Public hisaab link"; area page shows the link state with a link to the hisaab.
+- Pure logic: `src/lib/hisaab.ts` (balances, chart series, months, collection summary, slugs, WhatsApp text); validators `src/lib/validators/hisaab.ts`.
+- Services: `hisaab-core.ts` (`buildAreaHisaab`, `ensureAreaSlug`), `hisaab.ts` (`getHisaab`, `getPublicHisaab`, `publicHisaabUrl`). Area service saves the switch and assigns the slug.
+- Pages: `/admin/hisaab` (+ nav item), `/resident/hisaab` (+ bottom nav, home tile), public `/hisaab/[areaSlug]`; PDF at `/pdf` under each. Shared `HisaabView`, `HisaabChart`, `HisaabShare`, `HisaabSkeleton`, `PhotoViewer`.
+- Seed: public links on for Satellite Town and G-11 (`/hisaab/satellite-town`, `/hisaab/g-11`); regular payers now pay month by month (same bill outcome), so every seeded month has collections. Existing databases keep their old payments (the payment history is only seeded once).
+- Tests: `src/lib/hisaab.test.ts` and `src/server/hisaab.integration.test.ts` (Pakistan-month bucketing, cancelled/pending/rejected left out, carried-over balance, collection without household data, slugs).
