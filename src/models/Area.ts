@@ -20,12 +20,17 @@ const areaSchema = new Schema(
     defaultMonthlyFee: { type: Number, required: true, min: 0, default: 150 },
     // Archived areas are hidden from pickers and read-only, but keep their history.
     status: { type: String, enum: AREA_STATUSES, default: "active", index: true },
+    // Public hisaab link (/hisaab/<slug>). The slug is assigned the first time
+    // the link is switched on and kept after renames, so shared links keep working.
+    publicHisaab: { type: Boolean, default: false },
+    slug: { type: String, trim: true, lowercase: true, maxlength: 60 },
   },
   { timestamps: true },
 );
 
 areaSchema.index({ city: 1, name: 1 }, { unique: true });
 areaSchema.index({ code: 1 }, { unique: true, partialFilterExpression: { code: { $type: "string" } } });
+areaSchema.index({ slug: 1 }, { unique: true, partialFilterExpression: { slug: { $type: "string" } } });
 
 export type AreaDoc = InferSchemaType<typeof areaSchema> & { _id: Types.ObjectId };
 
