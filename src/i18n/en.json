@@ -471,7 +471,14 @@
       "feeHint": "New households in this area start with this fee. It can be changed per house.",
       "description": "Description",
       "descriptionPlaceholder": "Optional: which blocks or sectors it covers",
-      "create": "Add area"
+      "create": "Add area",
+      "publicHisaab": "Public hisaab link",
+      "publicHisaabHint": "Anyone with the link can see this area's monthly totals and expenses. Household names are never shown."
+    },
+    "hisaabLink": {
+      "on": "Public hisaab link is on",
+      "off": "Public hisaab link is off",
+      "view": "View hisaab"
     }
   },
   "blocks": {
@@ -1041,5 +1048,72 @@
     "addCategory": "Add",
     "removeCategory": "Remove {name}",
     "custom": "Custom"
+  },
+  "hisaab": {
+    "title": "Hisaab",
+    "pageTitle": "{area} hisaab",
+    "intro": "Money collected and spent in the area, month by month.",
+    "publicIntro": "The monthly account of {area}, shared by {organisation}. Only totals are shown, never names or amounts of individual houses.",
+    "month": "Month",
+    "area": "Area",
+    "archived": "Archived",
+    "downloadPdf": "Download PDF",
+    "balance": {
+      "title": "Balance",
+      "opening": "Opening balance",
+      "openingHint": "Closing balance of last month",
+      "collected": "Collected",
+      "collectedHint": "Fees received this month",
+      "spent": "Spent",
+      "spentHint": "Approved expenses",
+      "closing": "Closing balance",
+      "closingHint": "Opening + collected − spent"
+    },
+    "collection": {
+      "title": "Fee collection",
+      "households": "{paid} of {total} households paid",
+      "partial": "{count, plural, one {# household} other {# households}} paid part of the fee",
+      "percent": "{percent}% of this month's fees collected",
+      "noBills": "Bills for this month have not been made yet.",
+      "privacy": "Only totals are shown, never the names or amounts of individual houses."
+    },
+    "byCategory": {
+      "title": "Spending by category",
+      "empty": "Nothing was spent this month."
+    },
+    "chart": {
+      "title": "Last 6 months",
+      "description": "Fees collected and money spent each month.",
+      "collected": "Collected",
+      "spent": "Spent",
+      "showTable": "Show the numbers",
+      "month": "Month",
+      "empty": "No money came in or went out in these six months."
+    },
+    "expenses": {
+      "title": "Expenses",
+      "count": "{count, plural, one {# expense} other {# expenses}}",
+      "emptyTitle": "No expenses this month",
+      "emptyBody": "Approved expenses with their receipts appear here.",
+      "viewPhoto": "View receipt photo for {description}",
+      "photoTitle": "Receipt photo",
+      "photoMissing": "Photo not available",
+      "total": "Total"
+    },
+    "pending": "{count, plural, one {# expense} other {# expenses}} ({amount}) waiting for committee approval. Not counted until approved.",
+    "share": {
+      "title": "Public link",
+      "on": "Anyone with this link can see this area's hisaab, without logging in.",
+      "off": "The public link is off. Turn it on in the area settings to share this hisaab on WhatsApp.",
+      "offArchived": "The public link does not work while the area is archived.",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "copyFailed": "Could not copy. Select the link and copy it by hand.",
+      "whatsapp": "Share on WhatsApp",
+      "open": "Open",
+      "settings": "Area settings"
+    },
+    "noAreaTitle": "No area yet",
+    "noAreaBody": "Your login is not linked to an area yet. Ask your area office to link it."
   }
 }

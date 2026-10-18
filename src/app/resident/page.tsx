@@ -45,7 +45,7 @@ export default async function ResidentHomePage() {
         ) : null}
         <ActionTile icon={ReceiptText} label={t("actions.myBills")} soonLabel={soon} href="/resident/bills" />
         <ActionTile icon={MessageSquarePlus} label={t("actions.newComplaint")} soonLabel={soon} />
-        <ActionTile icon={Scale} label={t("actions.hisaab")} soonLabel={soon} />
+        <ActionTile icon={Scale} label={t("actions.hisaab")} soonLabel={soon} href="/resident/hisaab" />
         <ActionTile icon={UserRound} label={t("actions.profile")} soonLabel={soon} href="/resident/profile" />
       </div>
     </div>
