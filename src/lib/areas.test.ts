@@ -46,7 +46,7 @@ describe("natural sorting", () => {
 });
 
 describe("areaFormSchema", () => {
-  const valid = { name: "Satellite Town", city: "Rawalpindi", description: "", defaultMonthlyFee: 150 };
+  const valid = { name: "Satellite Town", city: "Rawalpindi", description: "", defaultMonthlyFee: 150, publicHisaab: false };
 
   it("accepts a normal area", () => {
     expect(areaFormSchema.safeParse(valid).success).toBe(true);

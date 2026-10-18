@@ -17,6 +17,8 @@ export const areaFormSchema = z.object({
     .int("feeWholeRupees")
     .min(0, "feeInvalid")
     .max(MAX_MONTHLY_FEE, "feeInvalid"),
+  // Anyone with the link can open the area's monthly hisaab (/hisaab/<slug>).
+  publicHisaab: z.boolean(),
 });
 
 export const updateAreaSchema = areaFormSchema.extend({ id: objectIdSchema });

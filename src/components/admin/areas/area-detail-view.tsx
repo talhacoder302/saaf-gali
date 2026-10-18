@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArchiveRestore, ArrowLeft, Pencil } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeft, Link2, Pencil, Scale } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AreaTab } from "@/lib/areas";
 import { formatRupees } from "@/lib/format";
+import { publicHisaabPath } from "@/lib/hisaab";
+import { cn } from "@/lib/utils";
 
 import { AreaFormDialog } from "./area-form-dialog";
 import { BlocksTab } from "./blocks-tab";
@@ -113,6 +115,24 @@ export function AreaDetailView({
           </div>
         ))}
       </dl>
+
+      <div className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2 text-sm">
+          <Link2 className={cn("size-4 shrink-0", area.publicHisaab ? "text-primary" : "text-muted-foreground")} aria-hidden />
+          <span className="font-medium">{area.publicHisaab ? t("hisaabLink.on") : t("hisaabLink.off")}</span>
+          {area.publicHisaab && area.slug ? (
+            <span dir="ltr" className="truncate text-muted-foreground">
+              {publicHisaabPath(area.slug)}
+            </span>
+          ) : null}
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/admin/hisaab?area=${area.id}`}>
+            <Scale aria-hidden />
+            {t("hisaabLink.view")}
+          </Link>
+        </Button>
+      </div>
 
       <Tabs value={tab} onValueChange={(value) => setParams({ tab: value === "blocks" ? null : value })}>
         <TabsList>

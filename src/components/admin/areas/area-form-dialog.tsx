@@ -21,6 +21,7 @@ import {
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CITIES, type City } from "@/lib/areas";
 import { areaFormSchema, type AreaFormInput } from "@/lib/validators/areas";
@@ -31,6 +32,7 @@ type EditableArea = {
   city: City;
   description: string;
   defaultMonthlyFee: number;
+  publicHisaab: boolean;
 };
 
 type AreaFormDialogProps = {
@@ -51,8 +53,14 @@ export function AreaFormDialog({ open, onOpenChange, area }: AreaFormDialogProps
   const form = useForm<AreaFormInput>({
     resolver: zodResolver(areaFormSchema),
     defaultValues: area
-      ? { name: area.name, city: area.city, description: area.description, defaultMonthlyFee: area.defaultMonthlyFee }
-      : { name: "", city: "Rawalpindi", description: "", defaultMonthlyFee: 150 },
+      ? {
+          name: area.name,
+          city: area.city,
+          description: area.description,
+          defaultMonthlyFee: area.defaultMonthlyFee,
+          publicHisaab: area.publicHisaab,
+        }
+      : { name: "", city: "Rawalpindi", description: "", defaultMonthlyFee: 150, publicHisaab: false },
   });
 
   function onSubmit(values: AreaFormInput) {
@@ -166,6 +174,20 @@ export function AreaFormDialog({ open, onOpenChange, area }: AreaFormDialogProps
                     aria-invalid={fieldState.invalid}
                   />
                   <FieldError>{errorMessage(fieldState.error?.message)}</FieldError>
+                </Field>
+              )}
+            />
+
+            <Controller
+              name="publicHisaab"
+              control={form.control}
+              render={({ field }) => (
+                <Field orientation="horizontal">
+                  <Switch id="area-public-hisaab" checked={field.value} onCheckedChange={field.onChange} />
+                  <div className="space-y-1">
+                    <FieldLabel htmlFor="area-public-hisaab">{t("publicHisaab")}</FieldLabel>
+                    <FieldDescription>{t("publicHisaabHint")}</FieldDescription>
+                  </div>
                 </Field>
               )}
             />

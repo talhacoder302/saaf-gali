@@ -24,6 +24,7 @@ import { User } from "@/models/User";
 import { logActivity } from "@/server/activity";
 import { loadAreaInScope } from "@/server/area-access";
 import { ServiceError } from "@/server/errors";
+import { ensureAreaSlug } from "@/server/hisaab-core";
 
 export type AreaOption = { id: string; name: string; city: City };
 
@@ -36,6 +37,7 @@ export type AreaListRow = AreaCounts & {
   description: string;
   defaultMonthlyFee: number;
   status: AreaStatus;
+  publicHisaab: boolean;
   managerNames: string[];
   supervisorCount: number;
 };
@@ -47,6 +49,9 @@ export type AreaDetail = AreaCounts & {
   description: string;
   defaultMonthlyFee: number;
   status: AreaStatus;
+  publicHisaab: boolean;
+  /** Set once the public hisaab link has been switched on. */
+  slug: string | null;
 };
 
 /** Active areas the current user may see, for pickers and filters. */
@@ -117,6 +122,7 @@ export async function listAreas(input: Partial<ListAreasInput>): Promise<AreaLis
     description: area.description ?? "",
     defaultMonthlyFee: area.defaultMonthlyFee,
     status: area.status,
+    publicHisaab: Boolean(area.publicHisaab),
     managerNames: area.managerIds
       .map((id) => managerNames.get(id.toString()))
       .filter((name): name is string => Boolean(name)),
@@ -142,6 +148,8 @@ export async function getAreaDetail(areaId: string): Promise<AreaDetail | null> 
     description: area.description ?? "",
     defaultMonthlyFee: area.defaultMonthlyFee,
     status: area.status,
+    publicHisaab: Boolean(area.publicHisaab),
+    slug: area.slug ?? null,
     ...(counts.get(area._id.toString()) ?? NO_COUNTS),
   };
 }
@@ -163,6 +171,7 @@ export async function createArea(input: AreaFormInput): Promise<{ id: string }> 
 
   await assertAreaNameFree(data.city, data.name);
   const area = await Area.create({ ...data, description: data.description || undefined });
+  if (data.publicHisaab) await ensureAreaSlug(area._id);
 
   await logActivity({
     actorId: actor.id,
@@ -188,16 +197,19 @@ export async function updateArea(input: UpdateAreaInput): Promise<void> {
     data.city !== area.city && "city",
     data.description !== (area.description ?? "") && "description",
     data.defaultMonthlyFee !== area.defaultMonthlyFee && "defaultMonthlyFee",
+    data.publicHisaab !== Boolean(area.publicHisaab) && "publicHisaab",
   ].filter((change): change is string => Boolean(change));
   if (changes.length === 0) return;
 
-  const set = { name: data.name, city: data.city, defaultMonthlyFee: data.defaultMonthlyFee };
+  const set = { name: data.name, city: data.city, defaultMonthlyFee: data.defaultMonthlyFee, publicHisaab: data.publicHisaab };
   await Area.updateOne(
     { _id: area._id },
     data.description
       ? { $set: { ...set, description: data.description } }
       : { $set: set, $unset: { description: 1 } },
   );
+  // The slug stays after the link is switched off, so turning it back on revives old links.
+  if (data.publicHisaab) await ensureAreaSlug(area._id);
 
   await logActivity({
     actorId: actor.id,
@@ -210,6 +222,7 @@ export async function updateArea(input: UpdateAreaInput): Promise<void> {
       ...(changes.includes("defaultMonthlyFee")
         ? { fromFee: area.defaultMonthlyFee, toFee: data.defaultMonthlyFee }
         : {}),
+      ...(changes.includes("publicHisaab") ? { publicHisaab: data.publicHisaab } : {}),
     },
   });
 }
