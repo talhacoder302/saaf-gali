@@ -16,6 +16,8 @@ export const ACTIVITY_ACTIONS = [
   "import",
   "generate",
   "cancel",
+  "reassign",
+  "mark",
   "login",
   "password_reset",
   "password_change",
