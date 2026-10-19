@@ -247,7 +247,26 @@
     "storage_not_configured": "Photo upload is not set up yet.",
     "expenses_not_allowed": "You are not allowed to add expenses.",
     "expense_already_reviewed": "Someone has already approved or rejected this expense.",
-    "cannot_review_own_expense": "You cannot approve or reject an expense you added."
+    "cannot_review_own_expense": "You cannot approve or reject an expense you added.",
+    "invalidCnic": "Enter the 13-digit CNIC, e.g. 37405-1234567-1.",
+    "cnicTaken": "Another worker already has this CNIC.",
+    "cnic_taken": "Another worker already has this CNIC.",
+    "addressTooLong": "Address is too long.",
+    "salaryInvalid": "Enter the salary in whole rupees, up to Rs. 1,000,000.",
+    "mobileNeededForLogin": "A login needs the worker's mobile number.",
+    "worker_has_no_mobile": "Add the worker's mobile number first.",
+    "worker_has_login": "This worker has a phone login and marks their own work.",
+    "worker_inactive": "This worker has left. Bring them back first.",
+    "workerNotInArea": "Choose an active worker of this area.",
+    "workerInactive": "This worker has left.",
+    "dayNotPlannable": "Only today and up to 8 weeks ahead can be planned.",
+    "duty_locked": "This duty has started or is over, so it can't be changed.",
+    "duty_cell_taken": "Someone just filled this cell. Refresh and try again.",
+    "duty_cannot_mark": "This duty can't be marked that way any more.",
+    "no_duties_to_reassign": "This worker has no scheduled duties left today.",
+    "sameWorker": "Choose a different worker.",
+    "chooseStreets": "Choose at least one street of one area.",
+    "chooseDays": "Choose at least one day."
   },
   "users": {
     "title": "Users",
@@ -349,7 +368,7 @@
   },
   "supervisor": {
     "title": "Assalam-o-Alaikum, {name}",
-    "intro": "Check your team's attendance, review photos and handle complaints.",
+    "intro": "Today's duties on your streets, your team and fee collection.",
     "actions": {
       "team": "My team",
       "review": "Review work",
@@ -360,7 +379,7 @@
   },
   "worker": {
     "title": "Assalam-o-Alaikum, {name}!",
-    "intro": "Your duties for today will appear here.",
+    "intro": "Your duties for today are below.",
     "actions": {
       "startWork": "Start work",
       "myDuties": "My duties",
@@ -1115,5 +1134,228 @@
     },
     "noAreaTitle": "No area yet",
     "noAreaBody": "Your login is not linked to an area yet. Ask your area office to link it."
+  },
+  "workers": {
+    "title": "Workers",
+    "intro": "Safai workers, their areas and salary. Workers with a phone can get their own login.",
+    "addWorker": "Add worker",
+    "searchPlaceholder": "Search by name, mobile or CNIC",
+    "allAreas": "All areas",
+    "allStatuses": "All statuses",
+    "status": {
+      "active": "Active",
+      "inactive": "Left"
+    },
+    "columns": {
+      "name": "Name",
+      "mobile": "Mobile",
+      "areas": "Areas",
+      "salary": "Salary",
+      "joined": "Joined",
+      "login": "Login",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actionsFor": "Actions for {name}",
+    "noPhone": "No phone",
+    "login": {
+      "none": "No login",
+      "active": "Has login",
+      "disabled": "Login off",
+      "temp": "Temporary password"
+    },
+    "actions": {
+      "edit": "Edit",
+      "attendance": "Attendance",
+      "createLogin": "Create login",
+      "deactivate": "Mark as left",
+      "activate": "Bring back"
+    },
+    "emptyTitle": "No workers yet",
+    "emptyBody": "Add your safai workers to plan their duties.",
+    "noResults": "No workers match",
+    "noResultsHint": "Try another name or clear the filters.",
+    "clearFilters": "Clear filters",
+    "total": "{total, plural, one {# worker} other {# workers}}",
+    "pageOf": "Page {page} of {pageCount}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "created": "Worker added",
+    "updated": "Worker updated",
+    "droppedDuties": "{count, plural, one {# planned duty was} other {# planned duties were}} removed from the roster.",
+    "form": {
+      "createTitle": "Add worker",
+      "editTitle": "Edit worker",
+      "description": "Workers without a phone are fine: their supervisor marks their duties for them.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Muhammad Aslam",
+      "mobile": "Mobile (optional)",
+      "cnic": "CNIC (optional)",
+      "cnicPlaceholder": "12345-1234567-1",
+      "address": "Address (optional)",
+      "salary": "Monthly salary",
+      "joiningDate": "Joining date",
+      "areas": "Areas",
+      "createLogin": "Create a login for this worker",
+      "createLoginHint": "Uses the mobile number. The worker sees their duties in Urdu and picks a new password on first login.",
+      "password": "Temporary password",
+      "generate": "Generate",
+      "loginLinked": "This worker has a login. Its name, mobile and areas follow these details.",
+      "create": "Add worker"
+    },
+    "statusDialog": {
+      "deactivateTitle": "Mark {name} as left?",
+      "deactivateBody": "Their login stops working and planned duties after today are removed. Today's duties stay so you can reassign them. History and attendance are kept.",
+      "activateTitle": "Bring back {name}?",
+      "activateBody": "They can be put on the roster again, and their login works again.",
+      "deactivated": "Marked as left",
+      "activated": "Worker is active again"
+    },
+    "loginDialog": {
+      "title": "Create login",
+      "description": "{name} will log in with {mobile}.",
+      "button": "Create login",
+      "created": "Login created",
+      "shareDescription": "Send these details to the worker. They choose their own password on first login."
+    },
+    "detail": {
+      "back": "All workers",
+      "backToTeam": "My team",
+      "salary": "Salary {amount}",
+      "joined": "Joined {date}",
+      "dutiesTitle": "Duties this month",
+      "noDuties": "No duties this month."
+    }
+  },
+  "attendance": {
+    "title": "Attendance",
+    "month": "Month",
+    "states": {
+      "present": "Present",
+      "absent": "Absent",
+      "pending": "Not done yet",
+      "off": "No duty"
+    },
+    "summary": "{present} present, {absent} absent out of {working} working days",
+    "dayLabel": "{date}: {state}",
+    "dutiesDone": "{completed} of {duties} duties done",
+    "rule": "Present means at least one duty was completed that day."
+  },
+  "duties": {
+    "shift": {
+      "morning": "Morning",
+      "evening": "Evening"
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "missed": "Missed",
+      "reassigned": "Given to another worker"
+    },
+    "instead": "instead of {name}",
+    "roster": {
+      "title": "Duty roster",
+      "intro": "Plan who cleans which street. Tap a cell to assign a worker.",
+      "area": "Area",
+      "block": "Block",
+      "allBlocks": "All blocks",
+      "previousWeek": "Previous week",
+      "nextWeek": "Next week",
+      "thisWeek": "This week",
+      "weekOf": "Week of {date}",
+      "street": "Street",
+      "today": "Today",
+      "copyLastWeek": "Copy last week",
+      "copyTitle": "Copy last week?",
+      "copyBody": "Last week's duties are copied into this week, from today on. Filled cells, past days and workers who left are skipped.",
+      "copied": "{created, plural, =0 {Nothing to copy} one {# duty copied} other {# duties copied}}",
+      "skipped": "{count, plural, one {# skipped} other {# skipped}} (already filled, past days or workers who left).",
+      "bulkAssign": "Bulk assign",
+      "reassign": "Reassign today",
+      "noStreetsTitle": "No streets in this area",
+      "noStreetsBody": "Add blocks and streets on the area page first.",
+      "noAreasTitle": "No areas",
+      "noAreasBody": "You are not assigned to an area yet.",
+      "noWorkers": "There are no active workers in this area yet. Add workers first.",
+      "cellLabel": "{street}, {date}, {shift}: {worker}",
+      "empty": "Empty",
+      "legend": "Each cell has a morning and an evening line."
+    },
+    "cell": {
+      "title": "{street}",
+      "description": "{date}. Pick a worker for each shift.",
+      "worker": "Worker",
+      "nobody": "No one",
+      "locked": "Started or over: it can't be changed.",
+      "saved": "Duty saved",
+      "removed": "Duty removed",
+      "remove": "Remove",
+      "notPlannable": "Only today and later days can be planned."
+    },
+    "bulk": {
+      "title": "Bulk assign",
+      "description": "Put one worker on several streets in one go. Cells that are already filled are left alone.",
+      "worker": "Worker",
+      "chooseWorker": "Choose a worker",
+      "shift": "Shift",
+      "days": "Days",
+      "streets": "Streets",
+      "selectAll": "Select all",
+      "clear": "Clear",
+      "selected": "{count} selected",
+      "submit": "Assign",
+      "done": "{created, plural, =0 {Nothing assigned} one {# duty assigned} other {# duties assigned}}"
+    },
+    "reassign": {
+      "title": "Reassign today's duties",
+      "description": "When a worker is absent, give today's remaining duties to another worker in one go. The old duties stay in the history.",
+      "from": "Absent worker",
+      "to": "Give to",
+      "choose": "Choose a worker",
+      "submit": "Reassign",
+      "done": "{moved, plural, one {# duty reassigned} other {# duties reassigned}}",
+      "notMoved": "{count, plural, one {# duty stayed} other {# duties stayed}}: the new worker doesn't cover that area."
+    },
+    "mark": {
+      "start": "Started",
+      "complete": "Done",
+      "miss": "Missed",
+      "saved": "Saved",
+      "onBehalf": "No phone: you mark this for {name}.",
+      "hasPhone": "Has a phone: marks own work."
+    },
+    "today": {
+      "title": "Today's duties",
+      "ownStreets": "On your streets",
+      "areaStreets": "In your areas (no streets are assigned to you yet)",
+      "unassigned": "{count, plural, one {# street has} other {# streets have}} no duty today.",
+      "emptyTitle": "No duties today",
+      "emptyBody": "Plan duties on the roster.",
+      "openRoster": "Open roster"
+    },
+    "team": {
+      "title": "My team",
+      "intro": "Workers in your areas and how today is going.",
+      "emptyTitle": "No workers yet",
+      "emptyBody": "Workers in your areas will show here.",
+      "todayDone": "{completed} of {duties} done today",
+      "noDutyToday": "No duty today",
+      "hasLogin": "Phone login",
+      "noLogin": "No phone"
+    }
+  },
+  "workerPortal": {
+    "today": "Today's duties",
+    "noDutiesTitle": "No duty today",
+    "noDutiesBody": "Your supervisor will put you on the roster.",
+    "upcoming": "Coming days",
+    "noUpcoming": "Nothing planned for the coming days yet.",
+    "notLinkedTitle": "Your login is not linked yet",
+    "notLinkedBody": "Ask your supervisor to link your login to your worker record.",
+    "attendanceThisMonth": "This month: {present, plural, one {# day present} other {# days present}}",
+    "photosSoon": "Starting and finishing work with photos is coming soon. Your supervisor marks your work for now.",
+    "myDutiesTitle": "My duties",
+    "seeAll": "See all"
   }
 }
