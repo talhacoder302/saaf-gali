@@ -31,6 +31,10 @@ import { Household } from "@/models/Household";
 import { Payment } from "@/models/Payment";
 import { ensureAreaCode, generateBillsForAreas } from "@/server/billing-core";
 import { ensureAreaSlug } from "@/server/hisaab-core";
+import { addDays, SHIFTS, weekStart, type DutyStatus } from "@/lib/duties";
+import { compareNames } from "@/lib/sort";
+import { Duty } from "@/models/Duty";
+import { Worker } from "@/models/Worker";
 import { loadSettings } from "@/server/settings";
 import { Settings } from "@/models/Settings";
 import { Street } from "@/models/Street";
@@ -665,6 +669,129 @@ async function seedHisaabLinks() {
   console.log(`  public hisaab links: ${links.join(", ") || "none"}`);
 }
 
+// --- Workers and duties ------------------------------------------------------
+
+type DemoWorker = { name: string; area: string; mobile?: string; cnic?: string; salary: number; joined: string; address?: string };
+
+/** Worker records. The four with a mobile are linked to the demo worker logins; the rest have no phone. */
+const DEMO_WORKERS: DemoWorker[] = [
+  { name: "Muhammad Aslam", area: "Satellite Town", mobile: "03015550105", cnic: "37405-1234567-1", salary: 28000, joined: "2024-03-01", address: "Dhok Ratta, Rawalpindi" },
+  { name: "Rashid Masih", area: "Satellite Town", mobile: "03025550106", cnic: "37405-2345678-3", salary: 27000, joined: "2024-06-15", address: "Christian Colony, Rawalpindi" },
+  { name: "Akram Masih", area: "Satellite Town", salary: 25000, joined: "2025-01-10", address: "Dhok Hassu, Rawalpindi" },
+  { name: "Bashir Ahmed", area: "Satellite Town", salary: 25000, joined: "2025-02-01" },
+  { name: "Yousaf Masih", area: "Satellite Town", cnic: "37405-3456789-5", salary: 26000, joined: "2024-11-20" },
+  { name: "Ghulam Rasool", area: "Satellite Town", salary: 24000, joined: "2026-04-05" },
+  { name: "Shahid Iqbal", area: "Bahria Town Phase 4", mobile: "03115550107", salary: 30000, joined: "2025-05-01" },
+  { name: "Javed Gill", area: "G-11", mobile: "03125550108", cnic: "61101-4567890-7", salary: 29000, joined: "2024-08-01", address: "G-11/3, Islamabad" },
+  { name: "Nazir Masih", area: "G-11", salary: 26000, joined: "2024-09-12", address: "France Colony, F-7/4" },
+  { name: "Pervaiz Masih", area: "G-11", salary: 25000, joined: "2025-03-03" },
+  { name: "Allah Ditta", area: "G-11", salary: 25000, joined: "2025-07-21" },
+  { name: "Riaz Ahmed", area: "G-11", salary: 24000, joined: "2026-02-14" },
+];
+
+async function seedWorkers() {
+  let created = 0;
+  for (const demo of DEMO_WORKERS) {
+    const area = await Area.findOne({ name: demo.area }).select("_id").lean();
+    if (!area) continue;
+    const user = demo.mobile ? await User.findOne({ mobile: demo.mobile, role: "worker" }).select("_id").lean() : null;
+    const exists = await Worker.exists(user ? { $or: [{ userId: user._id }, { name: demo.name }] } : { name: demo.name });
+    if (exists) continue;
+    await Worker.create({
+      ...(user ? { userId: user._id } : {}),
+      name: demo.name,
+      ...(demo.mobile ? { mobile: demo.mobile } : {}),
+      ...(demo.cnic ? { cnic: demo.cnic } : {}),
+      ...(demo.address ? { address: demo.address } : {}),
+      monthlySalary: demo.salary,
+      joiningDate: karachiDayStart(demo.joined),
+      areaIds: [area._id],
+    });
+    created += 1;
+  }
+  console.log(`  workers: ${created} created, ${DEMO_WORKERS.length - created} already there`);
+}
+
+/** Workers with a phone mark their own work (next module); the supervisor marks the others. */
+const WORKERS_WITH_PHONE = new Set(DEMO_WORKERS.filter((worker) => worker.mobile).map((worker) => worker.name));
+
+/**
+ * Two weeks of history, this week and next week for Satellite Town and G-11.
+ * Streets are cleaned every day; each worker keeps the same streets each morning, and the first
+ * three streets of each area also get an evening round. Past duties are
+ * mostly completed, some missed, and one absent worker's day was reassigned.
+ * Skipped once any duty exists.
+ */
+async function seedDuties() {
+  if (await Duty.exists({})) {
+    console.log("  duties already exist, roster not re-seeded");
+    return;
+  }
+  const today = dayKey();
+  const from = addDays(weekStart(today), -14);
+  const days = Array.from({ length: 28 }, (_, index) => addDays(from, index));
+  const docs: Record<string, unknown>[] = [];
+  let reassigned = 0;
+  const at = (day: string, time: string) => new Date(`${day}T${time}:00+05:00`);
+
+  for (const areaName of ["Satellite Town", "G-11"]) {
+    const area = await Area.findOne({ name: areaName }).select("_id").lean();
+    if (!area) continue;
+    const supervisor = await User.findOne({ role: "supervisor", areaIds: area._id }).select("_id").lean();
+    const workers = (await Worker.find({ areaIds: area._id, status: "active" }).select("name").lean()).sort((a, b) => compareNames(a.name, b.name));
+    const blockNames = new Map((await Block.find({ areaId: area._id }).select("name").lean()).map((b) => [b._id.toString(), b.name]));
+    const streets = (await Street.find({ areaId: area._id }).select("name blockId").lean()).sort(
+      (a, b) =>
+        compareNames(blockNames.get(a.blockId.toString()) ?? "", blockNames.get(b.blockId.toString()) ?? "") || compareNames(a.name, b.name),
+    );
+    if (workers.length < 2 || streets.length === 0) continue;
+
+    // One worker was absent on a weekday last week; the first worker covered.
+    const absent = workers[workers.length - 1]!;
+    const cover = workers[0]!;
+    const absentDay = addDays(weekStart(today), -5);
+
+    for (const day of days) {
+      const random = randomFor(`duties:${areaName}:${day}`);
+      for (const shift of SHIFTS) {
+        const shiftStreets = shift === "morning" ? streets : streets.slice(0, 3);
+        for (const [index, street] of shiftStreets.entries()) {
+          const worker = workers[(index + (shift === "evening" ? 1 : 0)) % workers.length]!;
+          const base = { streetId: street._id, areaId: area._id, day, shift, createdBy: supervisor?._id };
+          const start = shift === "morning" ? "07:10" : "16:05";
+          const end = shift === "morning" ? "10:40" : "18:20";
+
+          if (worker._id.equals(absent._id) && day === absentDay) {
+            const oldId = new Types.ObjectId();
+            const newId = new Types.ObjectId();
+            docs.push({ _id: oldId, ...base, workerId: worker._id, status: "reassigned", active: false, reassignedTo: cover._id, reassignedDutyId: newId, reassignedBy: supervisor?._id, reassignedAt: at(day, "07:30") });
+            docs.push({ _id: newId, ...base, workerId: cover._id, status: "completed", active: true, reassignedFrom: oldId, startedAt: at(day, "07:45"), completedAt: at(day, "11:15"), markedBy: supervisor?._id });
+            reassigned += 1;
+            continue;
+          }
+
+          const roll = random();
+          let status: DutyStatus = "scheduled";
+          if (day < today) status = roll < 0.07 ? "missed" : "completed";
+          else if (day === today && shift === "morning") status = roll < 0.5 ? "completed" : roll < 0.75 ? "in_progress" : "scheduled";
+          docs.push({
+            ...base,
+            workerId: worker._id,
+            status,
+            active: true,
+            ...(status === "completed" || status === "in_progress" ? { startedAt: at(day, start) } : {}),
+            ...(status === "completed" ? { completedAt: at(day, end) } : {}),
+            ...(status !== "scheduled" && !WORKERS_WITH_PHONE.has(worker.name) && supervisor ? { markedBy: supervisor._id } : {}),
+          });
+        }
+      }
+    }
+  }
+
+  if (docs.length > 0) await Duty.insertMany(docs);
+  console.log(`  ${docs.length} duties from ${from} to ${days.at(-1)} (${reassigned} reassigned for an absent worker)`);
+}
+
 async function main() {
   console.log(`Seeding database "${env.MONGODB_DB_NAME}"...`);
   const mongoose = await connectDB();
@@ -680,6 +807,8 @@ async function main() {
   await seedFees();
   await seedExpenses();
   await seedHisaabLinks();
+  await seedWorkers();
+  await seedDuties();
 
   const collections = await mongoose.connection.db?.listCollections().toArray();
   console.log(`Done. Collections: ${collections?.map((c) => c.name).sort().join(", ") ?? "none"}`);
