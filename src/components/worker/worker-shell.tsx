@@ -10,7 +10,7 @@ export const WORKER_ROOT = "/worker";
 const items: NavItem[] = [
   { key: "home", icon: House, href: WORKER_ROOT },
   { key: "startWork", icon: Camera },
-  { key: "myDuties", icon: ClipboardList },
+  { key: "myDuties", icon: ClipboardList, href: `${WORKER_ROOT}/duties` },
   { key: "profile", icon: UserRound, href: `${WORKER_ROOT}/profile` },
 ];
 
